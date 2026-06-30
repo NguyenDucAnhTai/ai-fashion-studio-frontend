@@ -1,0 +1,158 @@
+@import "tailwindcss";
+
+@theme {
+  /* Colors */
+  --color-primary-50: #f7f7f7;
+  --color-primary-100: #efefef;
+  --color-primary-200: #d8d8d8;
+  --color-primary-300: #bfbfbf;
+  --color-primary-400: #8c8c8c;
+  --color-primary-500: #595959;
+  --color-primary-600: #404040;
+  --color-primary-700: #262626;
+  --color-primary-800: #141414;
+  --color-primary-900: #0a0a0a;
+  --color-primary-950: #050505;
+
+  --color-accent-50: #f5f3ff;
+  --color-accent-100: #ede9fe;
+  --color-accent-200: #ddd6fe;
+  --color-accent-300: #c4b5fd;
+  --color-accent-400: #a78bfa;
+  --color-accent-500: #8b5cf6;
+  --color-accent-600: #7c3aed;
+  --color-accent-700: #6d28d9;
+  --color-accent-800: #5b21b6;
+  --color-accent-900: #4c1d95;
+
+  --color-beige-50: #fdfcfa;
+  --color-beige-100: #faf8f4;
+  --color-beige-200: #f5f0e6;
+  --color-beige-300: #ede5d5;
+  --color-beige-400: #e0d4bc;
+  --color-beige-500: #cfc0a0;
+  --color-beige-600: #b8a07a;
+  --color-beige-700: #9a8060;
+  --color-beige-800: #7a6248;
+  --color-beige-900: #5c4830;
+
+  --color-success-50: #ecfdf5;
+  --color-success-500: #10b981;
+  --color-success-700: #047857;
+
+  --color-warning-50: #fffbeb;
+  --color-warning-500: #f59e0b;
+  --color-warning-700: #b45309;
+
+  --color-error-50: #fef2f2;
+  --color-error-500: #ef4444;
+  --color-error-700: #b91c1c;
+
+  /* Fonts */
+  --font-sans: Inter, system-ui, sans-serif;
+  --font-display: "Playfair Display", Georgia, serif;
+
+  /* Shadows */
+  --shadow-soft: 0 2px 20px rgba(0, 0, 0, 0.06);
+  --shadow-medium: 0 8px 40px rgba(0, 0, 0, 0.1);
+  --shadow-large: 0 20px 60px rgba(0, 0, 0, 0.15);
+  --shadow-accent: 0 4px 24px rgba(196, 181, 253, 0.4);
+
+  /* Animations */
+  --animate-marquee: marquee 35s linear infinite;
+  --animate-marquee-slow: marquee 50s linear infinite;
+  --animate-fade-in: fadeIn 0.6s ease-out;
+  --animate-slide-up: slideUp 0.5s ease-out;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-float-delayed: float 6s ease-in-out infinite 2s;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-white font-sans text-primary-900;
+    line-height: 1.5;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    line-height: 1.2;
+  }
+}
+
+@layer utilities {
+  .pause-animation {
+    animation-play-state: paused;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .marquee-track {
+    will-change: transform;
+  }
+}
+
+/* Marquee pause on hover */
+.marquee-container:hover .marquee-track {
+  animation-play-state: paused;
+}
