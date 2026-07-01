@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { ArrowRight } from "lucide-react";
-import Button from "../../../shared/components/Button";
+import { Link } from "react-router-dom";
 import Container from "../../../shared/components/Container";
 import Hero3DPreview from "./Hero3DPreview";
 import HeroCustomizerControls from "./HeroCustomizerControls";
@@ -18,9 +18,7 @@ export default function HeroSection() {
   const [fitId, setFitId] = useState<FitOption>("regular");
 
   const fabric = useMemo(
-    () =>
-      FABRIC_OPTIONS.find((option) => option.id === fabricId) ??
-      FABRIC_OPTIONS[0],
+    () => FABRIC_OPTIONS.find((option) => option.id === fabricId) ?? FABRIC_OPTIONS[0],
     [fabricId],
   );
 
@@ -54,23 +52,24 @@ export default function HeroSection() {
           </p>
 
           <div className="mt-8 flex flex-wrap justify-center gap-4">
-            <Button variant="primary" size="lg" className="group">
+            <Link
+              to="/products"
+              className="group inline-flex items-center justify-center gap-2 rounded-full bg-primary-900 px-8 py-3.5 text-base font-medium tracking-wide text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-700 hover:shadow-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2"
+            >
               Start Creating
-              <ArrowRight
-                size={16}
-                className="transition-transform group-hover:translate-x-1"
-              />
-            </Button>
+              <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+            </Link>
 
-            <Button variant="outline" size="lg">
-              Explore Collection
-            </Button>
+            <Link
+              to="/products"
+              className="inline-flex items-center justify-center rounded-full border border-primary-900 bg-transparent px-8 py-3.5 text-base font-medium tracking-wide text-primary-900 transition-all duration-200 hover:bg-primary-900 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2"
+            >
+              Explore Catalog
+            </Link>
           </div>
         </div>
       </Container>
 
-      {/* Full-width floating stage: no card, no column split, model floats
-          directly on the hero background with controls around it. */}
       <div className="relative mx-auto mt-12 w-full max-w-5xl px-4 sm:px-6 lg:px-0">
         <Hero3DPreview color={color} fabric={fabric} fit={fit} />
 

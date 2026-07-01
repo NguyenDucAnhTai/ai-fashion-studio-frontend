@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from "react";
-import { ShoppingBag, Menu, X, ChevronDown } from "lucide-react";
+﻿import { useEffect, useRef, useState } from "react";
+import { ChevronDown, Menu, ShoppingBag, X } from "lucide-react";
+import { Link } from "react-router-dom";
 import Logo from "../../../shared/components/Logo";
-import Button from "../../../shared/components/Button";
 import MegaMenu from "./MegaMenu";
 import { NAV_ITEMS } from "../../../shared/constants/navItems";
 
@@ -18,7 +18,9 @@ export default function Navbar() {
   }, []);
 
   const handleMouseEnter = (label: string) => {
-    if (menuTimeout.current) clearTimeout(menuTimeout.current);
+    if (menuTimeout.current) {
+      clearTimeout(menuTimeout.current);
+    }
     setActiveMenu(label);
   };
 
@@ -31,49 +33,31 @@ export default function Navbar() {
       <header
         className={[
           "fixed top-0 left-0 right-0 z-40 transition-all duration-500",
-
-          "bg-white/35",
-
-          "backdrop-blur-[24px]",
-          "supports-[backdrop-filter]:backdrop-blur-[24px]",
-
-          "border-b border-white/20",
-
-          "before:absolute before:inset-0",
-          "before:bg-gradient-to-r",
-          "before:from-white/20",
-          "before:via-white/5",
-          "before:to-white/20",
-
+          "bg-white/35 backdrop-blur-[24px] supports-[backdrop-filter]:backdrop-blur-[24px]",
+          "border-b border-white/20 before:absolute before:inset-0 before:bg-gradient-to-r before:from-white/20 before:via-white/5 before:to-white/20",
           scrolled ? "shadow-[0_12px_40px_rgba(0,0,0,0.08)]" : "",
         ].join(" ")}
       >
-        <div className="mx-auto max-w-[1780px] px-8 lg:px-14">
-          <div className="flex items-center h-[72px]">
-            {/* Logo */}
-            <div className="flex-shrink-0 mr-24">
+        <div className="relative mx-auto max-w-[1780px] px-5 sm:px-8 lg:px-14">
+          <div className="flex h-[72px] items-center">
+            <div className="mr-10 flex-shrink-0 lg:mr-20">
               <Logo />
             </div>
 
-            {/* Center nav */}
-            <nav className="hidden lg:flex items-center justify-center gap-8 flex-1">
+            <nav className="hidden flex-1 items-center justify-center gap-8 lg:flex">
               {NAV_ITEMS.map((item) => (
                 <div
                   key={item.label}
                   className="relative"
-                  onMouseEnter={() =>
-                    item.dropdown ? handleMouseEnter(item.label) : undefined
-                  }
+                  onMouseEnter={() => item.dropdown && handleMouseEnter(item.label)}
                   onMouseLeave={handleMouseLeave}
                 >
-                  <a
-                    href={item.href}
+                  <Link
+                    to={item.href}
                     className={[
-                      "flex items-center gap-1.5 text-[16px] font-medium text-[#1f2937]",
-                      "transition-colors duration-200 hover:text-black",
+                      "flex items-center gap-1.5 text-[16px] font-medium text-[#1f2937] transition-colors duration-200 hover:text-black",
                       activeMenu === item.label ? "text-black" : "",
                     ].join(" ")}
-                    onClick={(e) => item.dropdown && e.preventDefault()}
                   >
                     {item.label}
                     {item.dropdown && (
@@ -86,59 +70,42 @@ export default function Navbar() {
                         ].join(" ")}
                       />
                     )}
-                  </a>
+                  </Link>
 
-                  {item.dropdown && (
-                    <MegaMenu
-                      items={item.dropdown}
-                      isVisible={activeMenu === item.label}
-                    />
-                  )}
+                  {item.dropdown && <MegaMenu items={item.dropdown} isVisible={activeMenu === item.label} />}
                 </div>
               ))}
             </nav>
 
-            {/* Right side */}
-            <div className="flex items-center gap-3 ml-auto">
-              <div className="flex items-center gap-6 ml-20">
-                <Button
-                  variant="ghost"
-                  className="
-      relative px-0 text-[16px] font-medium text-[#1f2937]
-      hover:text-black
-      after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-0
-      after:bg-black after:transition-all after:duration-300
-      hover:after:w-full
-    "
+            <div className="ml-auto flex items-center gap-3">
+              <div className="hidden items-center gap-6 lg:flex">
+                <Link
+                  to="/login"
+                  className="relative text-[16px] font-medium text-[#1f2937] transition-colors hover:text-black after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-0 after:bg-black after:transition-all after:duration-300 hover:after:w-full"
                 >
                   Login
-                </Button>
-
-                <Button
-                  variant="custom"
-                  className="
-    h-12 px-7 rounded-full bg-[#DFFF4F] text-black text-[15px] font-bold
-    transition-all duration-300 ease-out
-    hover:bg-black hover:text-white
-    hover:shadow-[0_12px_30px_rgba(0,0,0,0.18)]
-    hover:-translate-y-0.5
-    active:translate-y-0
-  "
+                </Link>
+                <Link
+                  to="/register"
+                  className="h-12 rounded-full bg-[#DFFF4F] px-7 py-3 text-[15px] font-bold text-black transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-black hover:text-white hover:shadow-[0_12px_30px_rgba(0,0,0,0.18)] active:translate-y-0"
                 >
-                  Sign Up →
-                </Button>
+                  Sign Up
+                </Link>
               </div>
 
-              <button
-                aria-label="Shopping cart"
-                className="relative flex items-center justify-center w-10 h-10 text-[#1f2937] hover:text-black transition-colors"
+              <Link
+                to="/products"
+                aria-label="Product catalog"
+                className="relative flex h-10 w-10 items-center justify-center text-[#1f2937] transition-colors hover:text-black"
               >
                 <ShoppingBag size={18} />
-                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-accent-400" />
-              </button>
+                <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-accent-400" />
+              </Link>
               <button
-                aria-label="Shopping cart"
-                className="relative flex items-center justify-center w-10 h-10 text-[#1f2937] hover:text-black transition-colors"
+                type="button"
+                aria-label="Toggle navigation menu"
+                onClick={() => setMobileOpen((open) => !open)}
+                className="relative flex h-10 w-10 items-center justify-center text-[#1f2937] transition-colors hover:text-black lg:hidden"
               >
                 {mobileOpen ? <X size={18} /> : <Menu size={18} />}
               </button>
@@ -147,41 +114,35 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* Mobile menu */}
-      <div
-        className={[
-          "fixed inset-0 z-30 lg:hidden transition-all duration-300",
-          mobileOpen ? "visible opacity-100" : "invisible opacity-0",
-        ].join(" ")}
-      >
-        <div
-          className="absolute inset-0 bg-primary-900/40 backdrop-blur-sm"
-          onClick={() => setMobileOpen(false)}
-        />
-        <nav
-          className={[
-            "absolute top-16 left-0 right-0 bg-white border-b border-primary-100 shadow-large transition-all duration-300",
-            mobileOpen ? "translate-y-0" : "-translate-y-4",
-          ].join(" ")}
-        >
-          <div className="px-4 py-4 space-y-1">
+      <div className={["fixed inset-0 z-30 lg:hidden transition-all duration-300", mobileOpen ? "visible opacity-100" : "invisible opacity-0"].join(" ")}>
+        <div className="absolute inset-0 bg-primary-900/40 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+        <nav className={["absolute left-0 right-0 top-16 border-b border-primary-100 bg-white shadow-large transition-all duration-300", mobileOpen ? "translate-y-0" : "-translate-y-4"].join(" ")}>
+          <div className="space-y-1 px-4 py-4">
             {NAV_ITEMS.map((item) => (
-              <a
+              <Link
                 key={item.label}
-                href={item.href}
-                className="block px-4 py-2.5 text-sm font-medium text-primary-800 hover:bg-beige-100 rounded-xl transition-colors"
+                to={item.href}
+                className="block rounded-xl px-4 py-2.5 text-sm font-medium text-primary-800 transition-colors hover:bg-beige-100"
                 onClick={() => setMobileOpen(false)}
               >
                 {item.label}
-              </a>
+              </Link>
             ))}
-            <div className="flex gap-2 pt-3 border-t border-primary-100">
-              <Button variant="outline" size="sm" className="flex-1">
+            <div className="flex gap-2 border-t border-primary-100 pt-3">
+              <Link
+                to="/login"
+                className="flex-1 rounded-full border border-primary-900 px-4 py-2 text-center text-sm font-medium text-primary-900 transition hover:bg-primary-900 hover:text-white"
+                onClick={() => setMobileOpen(false)}
+              >
                 Login
-              </Button>
-              <Button variant="primary" size="sm" className="flex-1">
+              </Link>
+              <Link
+                to="/register"
+                className="flex-1 rounded-full bg-primary-900 px-4 py-2 text-center text-sm font-medium text-white transition hover:bg-primary-700"
+                onClick={() => setMobileOpen(false)}
+              >
                 Sign Up
-              </Button>
+              </Link>
             </div>
           </div>
         </nav>

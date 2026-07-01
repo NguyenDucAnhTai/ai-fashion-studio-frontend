@@ -1,41 +1,41 @@
-import { Scissors, ExternalLink } from "lucide-react";
+﻿import { ExternalLink, Scissors } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const COLUMNS = [
   {
-    title: "Shop",
+    title: "Browse",
     links: [
-      { label: "New Arrivals", href: "/shop/new" },
-      { label: "Collections", href: "/collections" },
-      { label: "Outfit Builder", href: "/studio/builder" },
-      { label: "Size Guide", href: "/individuals/size-guide" },
+      { label: "Landing", href: "/" },
+      { label: "Products", href: "/products" },
+      { label: "About Us", href: "/about-us" },
+      { label: "Public Feedback", href: "/feedbacks" },
     ],
   },
   {
-    title: "Platform",
+    title: "Customer Flow",
     links: [
-      { label: "Fashion Coach", href: "/studio/coach" },
-      { label: "2D Fit Preview", href: "/individuals/fit-preview" },
-      { label: "Customization Studio", href: "/studio" },
-      { label: "Customer Support", href: "/support" },
+      { label: "My Designs", href: "/designs/my" },
+      { label: "My Orders", href: "/orders/my" },
+      { label: "Payment", href: "/payment/success" },
+      { label: "Try-On", href: "/products" },
     ],
   },
   {
-    title: "Company",
+    title: "Operations",
     links: [
-      { label: "About", href: "/about" },
-      { label: "Contact", href: "/about/contact" },
-      { label: "Privacy Policy", href: "/legal/privacy" },
-      { label: "Terms", href: "/legal/terms" },
+      { label: "Staff", href: "/staff" },
+      { label: "Admin", href: "/admin" },
+      { label: "Inventory", href: "/admin/inventory" },
+      { label: "Feedback Review", href: "/staff/feedbacks" },
     ],
   },
   {
     title: "Account",
     links: [
       { label: "Login", href: "/login" },
-      { label: "Sign Up", href: "/signup" },
-      { label: "Orders", href: "/account/orders" },
-      { label: "Saved Designs", href: "/studio/saved" },
+      { label: "Register", href: "/register" },
+      { label: "Orders", href: "/orders/my" },
+      { label: "Saved Designs", href: "/designs/my" },
     ],
   },
 ];
@@ -43,63 +43,50 @@ const COLUMNS = [
 const SOCIALS = [
   { label: "Instagram", href: "#" },
   { label: "TikTok", href: "#" },
-  { label: "X (Twitter)", href: "#" },
+  { label: "X", href: "#" },
 ];
 
 export default function Footer() {
   return (
-    <footer className="w-full bg-white border-t border-primary-100">
-      {/* Main grid */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-12 lg:gap-8">
-          {/* Brand column — spans 2 */}
+    <footer className="w-full border-t border-primary-100 bg-white">
+      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
+        <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-6 lg:gap-8">
           <div className="lg:col-span-2">
-            <Link to="/" className="flex items-center gap-2 mb-5 group w-fit">
-              <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-900 group-hover:scale-110 transition-transform">
+            <Link to="/" className="group mb-5 flex w-fit items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-900 transition-transform group-hover:scale-110">
                 <Scissors size={15} className="text-white" strokeWidth={2} />
               </span>
-              <span className="font-display text-lg font-semibold text-primary-900 leading-none">
+              <span className="font-display text-lg font-semibold leading-none text-primary-900">
                 Fitwear<span className="text-accent-400"> Studio</span>
               </span>
             </Link>
 
-            <p className="text-sm text-primary-500 leading-relaxed max-w-xs mb-6">
-              Personalized fashion shopping, outfit customization, and 2D fit
-              preview for confident online purchasing.
+            <p className="mb-6 max-w-xs text-sm leading-relaxed text-primary-500">
+              AI T-shirt customization, saved design flow, virtual try-on preview, order, payment, and public feedback for the MVP demo.
             </p>
 
-            {/* Newsletter */}
-            <div className="flex items-center gap-2 bg-beige-50 border border-primary-100 rounded-xl px-3 py-2.5">
+            <div className="flex items-center gap-2 rounded-xl border border-primary-100 bg-beige-50 px-3 py-2.5">
               <input
                 type="email"
                 placeholder="Your email"
-                className="flex-1 bg-transparent text-xs text-primary-700 placeholder-primary-300 outline-none"
+                className="flex-1 bg-transparent text-xs text-primary-700 outline-none placeholder:text-primary-300"
                 readOnly
               />
-              <button className="flex-shrink-0 text-[10px] font-semibold text-accent-500 hover:text-accent-700 transition-colors whitespace-nowrap">
+              <button className="flex-shrink-0 whitespace-nowrap text-[10px] font-semibold text-accent-500 transition-colors hover:text-accent-700">
                 Subscribe
               </button>
             </div>
-            <p className="text-[9px] text-primary-300 mt-1.5 px-0.5">
-              Weekly style updates. No spam.
-            </p>
           </div>
 
-          {/* Link columns */}
           {COLUMNS.map((col) => (
             <div key={col.title} className="lg:col-span-1">
-              <h3 className="text-[10px] text-primary-400 uppercase tracking-widest font-semibold mb-4">
-                {col.title}
-              </h3>
+              <h3 className="mb-4 text-[10px] font-semibold uppercase tracking-widest text-primary-400">{col.title}</h3>
               <ul className="space-y-3">
                 {col.links.map((link) => (
                   <li key={link.label}>
-                    <a
-                      href={link.href}
-                      className="text-sm text-primary-600 hover:text-primary-900 transition-colors leading-none"
-                    >
+                    <Link to={link.href} className="text-sm leading-none text-primary-600 transition-colors hover:text-primary-900">
                       {link.label}
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -108,24 +95,22 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Bottom bar */}
       <div className="border-t border-primary-100">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-[10px] text-primary-300 uppercase tracking-wider">
-            &copy; {new Date().getFullYear()} Fitwear Studio. All rights
-            reserved.
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-5 sm:flex-row sm:px-6 lg:px-8">
+          <p className="text-[10px] uppercase tracking-wider text-primary-300">
+            &copy; {new Date().getFullYear()} Fitwear Studio. All rights reserved.
           </p>
 
           <div className="flex items-center gap-6">
-            {SOCIALS.map((s) => (
+            {SOCIALS.map((social) => (
               <a
-                key={s.label}
-                href={s.href}
-                className="flex items-center gap-1 text-[10px] text-primary-400 hover:text-primary-700 uppercase tracking-wider font-medium transition-colors"
+                key={social.label}
+                href={social.href}
+                className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-primary-400 transition-colors hover:text-primary-700"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {s.label}
+                {social.label}
                 <ExternalLink size={9} />
               </a>
             ))}

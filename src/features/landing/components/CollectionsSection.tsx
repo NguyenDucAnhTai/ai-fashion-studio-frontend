@@ -1,9 +1,9 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { ArrowUpRight, ShoppingBag } from "lucide-react";
 import { motion } from "framer-motion";
 import Container from "../../../shared/components/Container";
 
-/* ─── Data ───────────────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 type CollectionCategory =
   | "all"
@@ -91,7 +91,7 @@ const COLLECTIONS = [
   },
 ];
 
-/* ─── Card ───────────────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 interface CollectionCardProps {
   title: string;
@@ -122,7 +122,7 @@ function CollectionCard({
 
   return (
     <motion.a
-      href={`/collections/${title.toLowerCase().replace(" ", "-")}`}
+      href="/products"
       initial={{ opacity: 0, y: 36 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
@@ -211,7 +211,7 @@ function CollectionCard({
           </h3>
           <div className="flex items-center gap-2 mt-0.5">
             <p className={["text-xs", subtitleColor].join(" ")}>{subtitle}</p>
-            <span className={["text-[9px]", subtitleColor].join(" ")}>·</span>
+            <span className={["text-[9px]", subtitleColor].join(" ")}>Â·</span>
             <p className={["text-[10px] font-medium", subtitleColor].join(" ")}>
               {pieces}
             </p>
@@ -232,7 +232,7 @@ function CollectionCard({
   );
 }
 
-/* ─── Section ────────────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 export default function CollectionsSection() {
   const [activeFilter, setActiveFilter] = useState<CollectionCategory>("all");
@@ -299,10 +299,10 @@ export default function CollectionsSection() {
           transition={{ delay: 0.2 }}
         >
           <a
-            href="/collections"
+            href="/products"
             className="inline-flex items-center gap-2 text-sm font-semibold text-primary-700 hover:text-primary-900 border-b border-primary-300 hover:border-primary-700 pb-0.5 transition-all"
           >
-            View All Collections
+            View Product Catalog
             <ArrowUpRight size={14} />
           </a>
         </motion.div>
@@ -310,3 +310,4 @@ export default function CollectionsSection() {
     </section>
   );
 }
+

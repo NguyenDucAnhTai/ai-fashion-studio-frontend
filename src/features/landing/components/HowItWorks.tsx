@@ -1,4 +1,4 @@
-import { CreditCard, Palette, Rotate3D, Shirt } from "lucide-react";
+﻿import { CreditCard, Palette, RefreshCw, Shirt } from "lucide-react";
 import { motion } from "framer-motion";
 import Container from "../../../shared/components/Container";
 
@@ -22,7 +22,7 @@ const STEPS = [
     id: "tryon",
     title: "Preview with AI Try-On",
     description: "Save the design, upload a photo, and poll the async try-on result.",
-    icon: Rotate3D,
+    icon: RefreshCw,
     gradient: "from-accent-100 via-accent-200 to-accent-300",
   },
   {
@@ -110,3 +110,4 @@ export default function HowItWorks() {
     </section>
   );
 }
+
