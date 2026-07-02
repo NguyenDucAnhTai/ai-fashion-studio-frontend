@@ -156,3 +156,31 @@
 .marquee-container:hover .marquee-track {
   animation-play-state: paused;
 }
+
+@keyframes showcase-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.showcase-track {
+  animation: showcase-marquee 46s linear infinite;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  contain: layout paint style;
+}
+
+.showcase-marquee:hover .showcase-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .showcase-track {
+    animation: none;
+    transform: none;
+  }
+}

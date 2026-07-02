@@ -57,7 +57,7 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     label: "Try-On Studio",
-    href: "/products",
+    href: "/designs/my",
     dropdown: [
       {
         title: "Start From Product",
@@ -68,8 +68,26 @@ export const NAV_ITEMS: NavItem[] = [
       {
         title: "Saved Design Rule",
         description: "Try-On is available after the customer saves a design.",
-        href: "/products",
+        href: "/designs/my",
         imageBg: "bg-beige-200",
+      },
+    ],
+  },
+  {
+    label: "My Studio",
+    href: "/designs/my",
+    dropdown: [
+      {
+        title: "My Designs",
+        description: "Open drafts, saved designs, Try-On, and checkout actions.",
+        href: "/designs/my",
+        imageBg: "bg-accent-100",
+      },
+      {
+        title: "My Orders",
+        description: "Track payment, production, shipping, and completed orders.",
+        href: "/orders/my",
+        imageBg: "bg-success-50",
       },
     ],
   },

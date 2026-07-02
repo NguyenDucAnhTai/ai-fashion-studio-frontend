@@ -11,6 +11,8 @@ export interface NavItem {
   dropdown?: NavDropdownItem[];
 }
 
+export type BadgeTone = "neutral" | "success" | "warning" | "error" | "accent";
+
 export interface ShowcaseItem {
   id: string;
   title: string;

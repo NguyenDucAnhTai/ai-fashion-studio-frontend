@@ -1,596 +1,441 @@
-import { useState } from "react";
-import { Sparkles, CheckCircle2, Send } from "lucide-react";
-import { motion } from "framer-motion";
+import {
+  ArrowRight,
+  CheckCircle2,
+  Lock,
+  Sparkles,
+  TrendingUp,
+} from "lucide-react";
 import Container from "../../../shared/components/Container";
 
-/* ─── Mock data ─────────────────────────────────────────────────────────── */
+/* ─── Mock data ──────────────────────────────────────────────────────── */
 
-const MESSAGES = [
+const CHAT_MESSAGES = [
   {
     id: 1,
     role: "user" as const,
     text: "I'm 170cm, 65kg. I need an outfit for a concert.",
-    time: "2:14 PM",
   },
   {
     id: 2,
     role: "coach" as const,
-    text: "Great choice! For a concert I'd go with an oversized black tee, cargo pants, and cotton fabric for comfort. That streetwear fit will look sharp.",
-    time: "2:14 PM",
+    text: "Oversized black tee, cargo pants, cotton fabric — that streetwear fit will look sharp.",
   },
   {
     id: 3,
     role: "user" as const,
     text: "Can you make it more casual?",
-    time: "2:15 PM",
-  },
-  {
-    id: 4,
-    role: "coach" as const,
-    text: "Sure! Here's your configuration: Oversized T-shirt, Cargo Pants, Cotton 250gsm, Oversized fit, Black & Grey tones, Size L. Your 2D preview is ready.",
-    time: "2:15 PM",
   },
 ];
 
 const COMPONENTS = [
-  {
-    id: "top",
-    label: "Top",
-    value: "Oversized T-Shirt",
-    colorDot: "bg-primary-900",
-  },
+  { id: "top", label: "Top", value: "Oversized Tee", colorDot: "bg-[#18213A]" },
   {
     id: "bottom",
     label: "Bottom",
     value: "Cargo Pants",
-    colorDot: "bg-primary-600",
+    colorDot: "bg-[#5F6A85]",
   },
   {
     id: "fabric",
     label: "Fabric",
     value: "Cotton 250gsm",
-    colorDot: "bg-beige-400",
-  },
-  {
-    id: "fit",
-    label: "Fit",
-    value: "Oversized",
-    colorDot: "bg-accent-300",
+    colorDot: "bg-[#C9B896]",
   },
   {
     id: "color",
     label: "Color",
     value: "Black / Grey",
-    colorDot: "bg-primary-500",
-  },
-  {
-    id: "size",
-    label: "Size",
-    value: "L",
-    colorDot: "bg-accent-400",
+    colorDot: "bg-violet-400",
   },
 ];
 
-/* ─── 2D Mannequin SVG ───────────────────────────────────────────────────── */
+const STATS = [
+  { label: "Before", value: 72, heightClass: "h-[58%]", highlight: false },
+  {
+    label: "With AI Coach",
+    value: 91,
+    heightClass: "h-[91%]",
+    highlight: true,
+  },
+];
+
+const FEATURES = [
+  "AI asks about your body & style preferences",
+  "Get instant outfit component suggestions",
+  "Preview your try-on before you customize",
+];
+
+/* ─── 2D Mannequin SVG ───────────────────────────────────────────────── */
 
 function MannequinPreview() {
   return (
     <svg
-      viewBox="0 0 160 295"
+      viewBox="0 0 180 320"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className="w-full h-full"
-      aria-label="2D body model preview"
+      className="h-full w-full"
+      aria-label="2D outfit preview"
     >
-      {/* Grid background */}
       <defs>
-        <pattern id="grid" width="14" height="14" patternUnits="userSpaceOnUse">
-          <path
-            d="M 14 0 L 0 0 0 14"
-            fill="none"
-            stroke="#E5E0D8"
-            strokeWidth="0.5"
-          />
-        </pattern>
+        <linearGradient
+          id="coachShirtGradient"
+          x1="65"
+          y1="54"
+          x2="115"
+          y2="203"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop stopColor="#2A2A2A" />
+          <stop offset="1" stopColor="#101010" />
+        </linearGradient>
+        <linearGradient
+          id="coachSleeveGradient"
+          x1="35"
+          y1="70"
+          x2="145"
+          y2="152"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop stopColor="#262626" />
+          <stop offset="1" stopColor="#131313" />
+        </linearGradient>
+        <linearGradient
+          id="coachPantsGradient"
+          x1="52"
+          y1="196"
+          x2="128"
+          y2="293"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop stopColor="#7C776E" />
+          <stop offset="1" stopColor="#54514B" />
+        </linearGradient>
       </defs>
-      <rect width="160" height="295" fill="url(#grid)" />
 
-      {/* ── Body outline ── */}
       {/* Head */}
       <ellipse
-        cx="80"
-        cy="26"
-        rx="18"
+        cx="90"
+        cy="36"
+        rx="17"
         ry="20"
-        fill="#EDE8E0"
-        stroke="#C8BFB0"
-        strokeWidth="1.5"
+        fill="#EFE6DA"
+        stroke="#BEB2A3"
+        strokeWidth="1.6"
       />
-      {/* Neck */}
-      <rect
-        x="73"
-        y="44"
-        width="14"
-        height="14"
-        rx="3"
-        fill="#EDE8E0"
-        stroke="#C8BFB0"
-        strokeWidth="1.5"
-      />
-
-      {/* ── T-shirt (oversized) ── */}
-      {/* Main body */}
       <path
-        d="M34 56 Q22 62 18 82 L18 140 Q18 148 26 150 L134 150 Q142 148 142 140 L142 82 Q138 62 126 56 L100 46 Q91 42 80 42 Q69 42 60 46 Z"
-        fill="rgba(18,18,18,0.82)"
-        stroke="rgba(18,18,18,0.4)"
-        strokeWidth="1"
-      />
-      {/* Left sleeve */}
-      <path
-        d="M18 82 L8 116 Q6 122 12 124 L26 126 Q32 124 34 118 L40 92"
-        fill="rgba(18,18,18,0.82)"
-        stroke="rgba(18,18,18,0.4)"
-        strokeWidth="1"
-      />
-      {/* Right sleeve */}
-      <path
-        d="M142 82 L152 116 Q154 122 148 124 L134 126 Q128 124 126 118 L120 92"
-        fill="rgba(18,18,18,0.82)"
-        stroke="rgba(18,18,18,0.4)"
-        strokeWidth="1"
-      />
-      {/* Collar detail */}
-      <path
-        d="M64 46 Q80 52 96 46"
-        stroke="rgba(255,255,255,0.2)"
-        strokeWidth="1.5"
-        fill="none"
+        d="M74 35c6-13 25-16 34-1"
+        stroke="#D8CFC2"
+        strokeWidth="2"
         strokeLinecap="round"
       />
 
-      {/* ── Cargo pants ── */}
+      {/* Neck */}
       <path
-        d="M18 148 L16 178 L28 228 L36 268 L50 272 L58 244 L80 244 L102 244 L110 272 L124 268 L132 228 L144 178 L142 148 Z"
-        fill="rgba(70,70,70,0.78)"
-        stroke="rgba(70,70,70,0.4)"
-        strokeWidth="1"
+        d="M76 55h28l5 13H71l5-13Z"
+        fill="#E8DED0"
+        stroke="#BEB2A3"
+        strokeWidth="1.2"
       />
-      {/* Cargo pocket detail (left) */}
+
+      {/* Sleeves (drawn first so the body overlaps them cleanly at the shoulder seam) */}
+      <path
+        d="M68 70C56 76 44 86 39 100c-4 11-4 23 0 34l7 16c2 4 7 5 11 2l7-14c-4-12-5-25-3-38 1-10 4-21 7-30Z"
+        fill="url(#coachSleeveGradient)"
+      />
+      <path
+        d="M112 70c12 6 24 16 29 30 4 11 4 23 0 34l-7 16c-2 4-7 5-11 2l-7-14c4-12 5-25 3-38-1-10-4-21-7-30Z"
+        fill="url(#coachSleeveGradient)"
+      />
+      <ellipse cx="51" cy="150" rx="9" ry="5" fill="#181818" />
+      <ellipse cx="129" cy="150" rx="9" ry="5" fill="#181818" />
+
+      {/* Body (oversized tee) */}
+      <path
+        d="M68 70C72 60 80 54 90 54c10 0 18 6 22 16l4 40c2 30 2 60-1 86-.5 4-4 7-8 7H73c-4 0-7.5-3-8-7-3-26-3-56-1-86Z"
+        fill="url(#coachShirtGradient)"
+      />
+      <path
+        d="M74 62c6 6 26 6 32 0"
+        stroke="rgba(255,255,255,0.25)"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
+      <path
+        d="M67 188c11 6 35 6 46 0"
+        stroke="rgba(255,255,255,0.12)"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+
+      {/* Waistband */}
+      <rect x="66" y="196" width="48" height="14" rx="7" fill="url(#coachPantsGradient)" />
+
+      {/* Legs */}
+      <path
+        d="M66 210L86 210C85 220 83 230 82 240L78 288C78 291 75 293 72 293L58 293C55 293 53 291 53 288L58 240C59 230 61 220 66 210Z"
+        fill="url(#coachPantsGradient)"
+      />
+      <path
+        d="M114 210L94 210C95 220 97 230 98 240L102 288C102 291 105 293 108 293L122 293C125 293 127 291 127 288L122 240C121 230 119 220 114 210Z"
+        fill="url(#coachPantsGradient)"
+      />
+      <path
+        d="M66 214c7 3 13 3 20 0"
+        stroke="rgba(255,255,255,0.14)"
+        strokeWidth="1.4"
+      />
+      <path
+        d="M114 214c-7 3-13 3-20 0"
+        stroke="rgba(255,255,255,0.14)"
+        strokeWidth="1.4"
+      />
+
+      {/* Cargo pockets */}
       <rect
-        x="24"
-        y="188"
+        x="54"
+        y="236"
         width="16"
-        height="12"
-        rx="2"
-        fill="none"
-        stroke="rgba(255,255,255,0.15)"
+        height="20"
+        rx="3"
+        fill="rgba(0,0,0,0.18)"
+        stroke="rgba(255,255,255,0.12)"
         strokeWidth="1"
       />
-      {/* Cargo pocket detail (right) */}
       <rect
-        x="120"
-        y="188"
+        x="110"
+        y="236"
         width="16"
-        height="12"
-        rx="2"
-        fill="none"
-        stroke="rgba(255,255,255,0.15)"
+        height="20"
+        rx="3"
+        fill="rgba(0,0,0,0.18)"
+        stroke="rgba(255,255,255,0.12)"
         strokeWidth="1"
       />
-      {/* Center seam */}
-      <line
-        x1="80"
-        y1="148"
-        x2="80"
-        y2="244"
-        stroke="rgba(255,255,255,0.1)"
-        strokeWidth="1"
-        strokeDasharray="3 3"
-      />
 
-      {/* ── Guide lines ── */}
-      {/* Shoulder */}
-      <line
-        x1="4"
-        y1="58"
-        x2="156"
-        y2="58"
-        stroke="#C8BFB0"
-        strokeWidth="0.8"
-        strokeDasharray="4 3"
-      />
-      {/* Chest */}
-      <line
-        x1="4"
-        y1="90"
-        x2="156"
-        y2="90"
-        stroke="#C8BFB0"
-        strokeWidth="0.8"
-        strokeDasharray="4 3"
-      />
-      {/* Waist */}
-      <line
-        x1="4"
-        y1="138"
-        x2="156"
-        y2="138"
-        stroke="#C8BFB0"
-        strokeWidth="0.8"
-        strokeDasharray="4 3"
-      />
-      {/* Hip */}
-      <line
-        x1="4"
-        y1="160"
-        x2="156"
-        y2="160"
-        stroke="#C8BFB0"
-        strokeWidth="0.8"
-        strokeDasharray="4 3"
-      />
-      {/* Knee */}
-      <line
-        x1="4"
-        y1="228"
-        x2="156"
-        y2="228"
-        stroke="#C8BFB0"
-        strokeWidth="0.8"
-        strokeDasharray="4 3"
-      />
-
-      {/* ── Measurement labels (right side) ── */}
-      <text x="146" y="61" fontSize="6" fill="#A09890" fontFamily="monospace">
-        SH
-      </text>
-      <text x="146" y="93" fontSize="6" fill="#A09890" fontFamily="monospace">
-        CH
-      </text>
-      <text x="146" y="141" fontSize="6" fill="#A09890" fontFamily="monospace">
-        WA
-      </text>
-      <text x="146" y="163" fontSize="6" fill="#A09890" fontFamily="monospace">
-        HI
-      </text>
-      <text x="146" y="231" fontSize="6" fill="#A09890" fontFamily="monospace">
-        KN
-      </text>
-
-      {/* ── Vertical height indicator ── */}
-      <line x1="6" y1="6" x2="6" y2="290" stroke="#C8BFB0" strokeWidth="0.8" />
-      <line x1="3" y1="6" x2="9" y2="6" stroke="#C8BFB0" strokeWidth="0.8" />
-      <line
-        x1="3"
-        y1="290"
-        x2="9"
-        y2="290"
-        stroke="#C8BFB0"
-        strokeWidth="0.8"
-      />
-      <text
-        x="2"
-        y="152"
-        fontSize="6.5"
-        fill="#A09890"
-        fontFamily="monospace"
-        transform="rotate(-90,2,152)"
-      >
-        170cm
-      </text>
+      {/* Shoes */}
+      <rect x="46" y="288" width="32" height="11" rx="5.5" fill="#1D1D1D" />
+      <rect x="102" y="288" width="32" height="11" rx="5.5" fill="#1D1D1D" />
     </svg>
   );
 }
 
-/* ─── Sub-components ────────────────────────────────────────────────────── */
+/* ─── Sub-components ─────────────────────────────────────────────────── */
 
-function ChatPanel() {
+function CoachChatPreview() {
   return (
-    <div
-      className="flex flex-col h-full bg-white rounded-2xl border border-primary-100 overflow-hidden"
-      style={{ minHeight: 460 }}
-    >
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3.5 border-b border-primary-100 bg-white">
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-300 to-accent-500 flex items-center justify-center flex-shrink-0">
-          <Sparkles size={14} className="text-white" />
+    <div className="flex flex-col gap-2.5 rounded-xl border border-[#ECECEE] bg-white p-3 shadow-[0_2px_16px_rgba(24,33,58,0.06)]">
+      <div className="flex items-center gap-2 border-b border-[#ECECEE] pb-2">
+        <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-400 to-violet-600">
+          <Sparkles size={11} className="text-white" />
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-primary-900 leading-none">
-            Fashion Coach
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold leading-none text-[#18213A]">
+            Coach
           </p>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-success-500" />
-            <span className="text-[10px] text-primary-400">Online</span>
+          <div className="mt-1 flex items-center gap-1">
+            <span className="h-1 w-1 rounded-full bg-emerald-500" />
+            <span className="text-[8px] text-[#8B93A7]">Online</span>
           </div>
         </div>
-        <span className="text-[9px] text-accent-500 font-medium bg-accent-50 px-2 py-0.5 rounded-full border border-accent-100">
-          AI
-        </span>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {MESSAGES.map((msg) => (
+      <div className="flex flex-col gap-1.5">
+        {CHAT_MESSAGES.map((msg) => (
           <div
             key={msg.id}
             className={[
-              "flex gap-2.5",
-              msg.role === "user" ? "flex-row-reverse" : "flex-row",
+              "max-w-[88%] rounded-lg px-2 py-1.5 text-[9px] leading-snug",
+              msg.role === "user"
+                ? "self-end rounded-br-sm bg-[#18213A] text-white"
+                : "self-start rounded-bl-sm border border-violet-100 bg-violet-50 text-[#3A4358]",
             ].join(" ")}
           >
-            {/* Avatar */}
-            <div
-              className={[
-                "flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold mt-0.5",
-                msg.role === "user"
-                  ? "bg-primary-900 text-white"
-                  : "bg-gradient-to-br from-accent-300 to-accent-500",
-              ].join(" ")}
-            >
-              {msg.role === "user" ? (
-                "U"
-              ) : (
-                <Sparkles size={11} className="text-white" />
-              )}
-            </div>
-
-            {/* Bubble */}
-            <div
-              className={[
-                "max-w-[75%]",
-                msg.role === "user" ? "items-end" : "items-start",
-              ].join(" ")}
-            >
-              <div
-                className={[
-                  "px-3.5 py-2.5 rounded-2xl text-xs leading-relaxed",
-                  msg.role === "user"
-                    ? "bg-primary-900 text-white rounded-tr-sm"
-                    : "bg-beige-100 text-primary-800 rounded-tl-sm",
-                ].join(" ")}
-              >
-                {msg.text}
-              </div>
-              <p className="text-[9px] text-primary-300 mt-1 px-1">
-                {msg.time}
-              </p>
-            </div>
+            {msg.text}
           </div>
         ))}
       </div>
+    </div>
+  );
+}
 
-      {/* Input */}
-      <div className="px-4 py-3 border-t border-primary-100">
-        <div className="flex items-center gap-2 bg-beige-50 rounded-xl px-3.5 py-2.5 border border-primary-100">
-          <input
-            type="text"
-            placeholder="Ask your fashion coach..."
-            className="flex-1 bg-transparent text-xs text-primary-700 placeholder-primary-300 outline-none"
-            readOnly
-          />
-          <button className="flex-shrink-0 w-7 h-7 rounded-lg bg-primary-900 flex items-center justify-center hover:bg-primary-700 transition-colors">
-            <Send size={12} className="text-white" />
-          </button>
-        </div>
+function OutfitPreview() {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-xl border border-[#ECECEE] bg-white p-4 shadow-[0_2px_16px_rgba(24,33,58,0.06)]">
+      <div className="w-full max-w-[130px]">
+        <MannequinPreview />
+      </div>
+      <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5">
+        <span className="rounded-full border border-violet-100 bg-violet-50 px-2.5 py-1 text-[9px] font-semibold text-violet-700">
+          Size L
+        </span>
+        <span className="rounded-full bg-[#F5F5F7] px-2.5 py-1 text-[9px] font-semibold text-[#4F5B76]">
+          Oversized Fit
+        </span>
       </div>
     </div>
   );
 }
 
-function ComponentsPanel() {
-  const [selected, setSelected] = useState<string[]>(
-    COMPONENTS.map((c) => c.id),
-  );
-
-  const toggle = (id: string) =>
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
-
+function StatsOverlayCard() {
   return (
-    <div
-      className="flex flex-col bg-white rounded-2xl border border-primary-100 overflow-hidden"
-      style={{ minHeight: 460 }}
-    >
-      {/* Header */}
-      <div className="px-4 py-3.5 border-b border-primary-100">
-        <p className="text-[10px] text-primary-400 uppercase tracking-widest font-medium mb-0.5">
-          Outfit Builder
+    <div className="rounded-2xl border border-[#ECECEE] bg-white p-4 shadow-[0_16px_44px_rgba(24,33,58,0.16)]">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-[#4F5B76]">
+          Fit Confidence
         </p>
-        <h3 className="text-sm font-semibold text-primary-900">
-          Recommended Components
-        </h3>
+        <span className="flex items-center gap-0.5 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-600">
+          <TrendingUp size={10} />
+          +19%
+        </span>
       </div>
 
-      {/* Component cards */}
-      <div className="flex-1 grid grid-cols-2 gap-3 p-4">
-        {COMPONENTS.map((comp) => {
-          const active = selected.includes(comp.id);
-          return (
-            <motion.button
-              key={comp.id}
-              onClick={() => toggle(comp.id)}
-              whileTap={{ scale: 0.96 }}
-              className={[
-                "text-left p-3 rounded-xl border-2 transition-all duration-200 cursor-pointer",
-                active
-                  ? "border-accent-300 bg-accent-50"
-                  : "border-primary-100 bg-white hover:border-primary-200 hover:bg-beige-50",
-              ].join(" ")}
-            >
-              <div className="flex items-start justify-between gap-1 mb-2">
+      <div className="flex items-end justify-center gap-1.5 text-[11px] font-semibold text-[#18213A]">
+        <span>72%</span>
+        <ArrowRight size={11} className="mb-[1px] text-[#8B93A7]" />
+        <span className="text-violet-600">91%</span>
+      </div>
+
+      <div className="mt-3 flex h-32 items-end gap-3">
+        {STATS.map((stat) => (
+          <div
+            key={stat.label}
+            className="flex h-full flex-1 flex-col items-center justify-end gap-1.5"
+          >
+            <div className="flex h-full w-full items-end">
+              <div
+                className={[
+                  "w-full rounded-t-md transition-all duration-300",
+                  stat.heightClass,
+                  stat.highlight ? "bg-[#5636F5]" : "bg-[#E4E4E8]",
+                ].join(" ")}
+              />
+            </div>
+            <span className="text-center text-[8px] leading-tight text-[#8B93A7]">
+              {stat.label}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LaptopMockup() {
+  return (
+    <div className="relative">
+      <div className="overflow-hidden rounded-2xl border border-[#ECECEE] bg-white shadow-[0_24px_64px_rgba(24,33,58,0.12)]">
+        {/* Browser top bar */}
+        <div className="flex items-center gap-3 border-b border-[#ECECEE] bg-[#F5F5F7] px-4 py-3">
+          <div className="flex flex-shrink-0 gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#FF5F57]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[#FEBC2E]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[#28C840]" />
+          </div>
+          <div className="flex flex-1 justify-center">
+            <div className="flex w-full max-w-xs items-center justify-center gap-1.5 rounded-full border border-[#ECECEE] bg-white px-4 py-1 text-[10px] text-[#8B93A7]">
+              <Lock size={9} />
+              fitwear.studio/coach
+            </div>
+          </div>
+          <div className="w-12 flex-shrink-0" />
+        </div>
+
+        {/* Screen content */}
+        <div className="grid grid-cols-[0.85fr_1.3fr] gap-3 bg-[#FAFAFA] p-4 sm:grid-cols-[0.8fr_1.4fr_0.8fr] sm:p-5">
+          <CoachChatPreview />
+          <OutfitPreview />
+
+          <div className="col-span-2 flex gap-2 sm:col-span-1 sm:flex-col">
+            {COMPONENTS.map((comp) => (
+              <div
+                key={comp.id}
+                className="flex flex-1 items-center gap-2 rounded-lg border border-[#ECECEE] bg-white p-2 shadow-[0_2px_16px_rgba(24,33,58,0.06)] sm:flex-none"
+              >
                 <span
                   className={[
-                    "w-5 h-5 rounded-md flex-shrink-0",
+                    "h-5 w-5 flex-shrink-0 rounded-md",
                     comp.colorDot,
                   ].join(" ")}
                 />
-                {active && (
-                  <CheckCircle2
-                    size={13}
-                    className="text-accent-500 flex-shrink-0"
-                  />
-                )}
+                <div className="min-w-0">
+                  <p className="truncate text-[7px] font-medium uppercase tracking-wide text-[#8B93A7] leading-none">
+                    {comp.label}
+                  </p>
+                  <p className="mt-0.5 truncate text-[9px] font-semibold text-[#18213A]">
+                    {comp.value}
+                  </p>
+                </div>
               </div>
-              <p className="text-[9px] text-primary-400 uppercase tracking-wider font-medium mb-0.5">
-                {comp.label}
-              </p>
-              <p className="text-xs font-semibold text-primary-900 leading-tight">
-                {comp.value}
-              </p>
-            </motion.button>
-          );
-        })}
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Footer */}
-      <div className="px-4 py-3 border-t border-primary-100">
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-primary-500">
-            <span className="font-semibold text-primary-900">
-              {selected.length}
-            </span>{" "}
-            of {COMPONENTS.length} selected
-          </span>
-          <button className="text-xs font-medium text-accent-500 hover:text-accent-700 transition-colors">
-            Update Preview →
-          </button>
-        </div>
+      {/* Laptop base */}
+      <div className="mx-auto mt-1.5 h-3 w-[88%] rounded-b-2xl bg-gradient-to-b from-[#DADCE2] to-[#C7C9D1]" />
+      <div className="mx-auto h-1 w-[72%] rounded-b-md bg-[#C7C9D1]/70" />
+
+      {/* Floating stats overlay */}
+      <div className="absolute -bottom-12 -right-4 w-[172px] sm:-bottom-14 sm:-right-10 sm:w-[196px] lg:-bottom-16 lg:-right-14">
+        <StatsOverlayCard />
       </div>
     </div>
   );
 }
 
-function PreviewPanel() {
+/* ─── Main Section ───────────────────────────────────────────────────── */
+
+export default function FashionCoachSection() {
   return (
-    <div
-      className="flex flex-col bg-beige-50 rounded-2xl border border-primary-100 overflow-hidden"
-      style={{ minHeight: 460 }}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3.5 border-b border-primary-100 bg-white">
-        <div>
-          <p className="text-[10px] text-primary-400 uppercase tracking-widest font-medium mb-0.5">
-            Visualization
-          </p>
-          <h3 className="text-sm font-semibold text-primary-900">2D Preview</h3>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-success-500 animate-pulse" />
-          <span className="text-[10px] text-primary-400 font-medium">Live</span>
-        </div>
-      </div>
-
-      {/* Mannequin area */}
-      <div className="flex-1 flex flex-col items-center justify-center p-4 gap-3">
-        <div className="w-full max-w-[200px] flex-1">
-          <MannequinPreview />
-        </div>
-
-        {/* Measurement tags */}
-        <div className="w-full flex items-center justify-center gap-3">
-          {[
-            { label: "Height", value: "170cm" },
-            { label: "Weight", value: "65kg" },
-            { label: "Size", value: "L" },
-          ].map(({ label, value }) => (
-            <div
-              key={label}
-              className="flex flex-col items-center bg-white rounded-xl px-3 py-2 border border-primary-100 shadow-soft"
-            >
-              <span className="text-[9px] text-primary-400 uppercase tracking-wide">
-                {label}
-              </span>
-              <span className="text-xs font-semibold text-primary-900 mt-0.5">
-                {value}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {/* Legend */}
-        <div className="w-full flex items-center justify-center gap-4">
-          {[
-            { color: "bg-primary-900", label: "T-Shirt" },
-            { color: "bg-primary-600", label: "Cargo" },
-            { color: "bg-beige-300", label: "Body" },
-          ].map(({ color, label }) => (
-            <div key={label} className="flex items-center gap-1.5">
-              <span className={["w-2.5 h-2.5 rounded-sm", color].join(" ")} />
-              <span className="text-[9px] text-primary-500">{label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Main Section ───────────────────────────────────────────────────────── */
-
-export default function PersonalizedFashionSection() {
-  return (
-    <section className="w-full bg-white py-20 lg:py-28 border-t border-primary-100">
+    <section className="w-full bg-[#FAFAFA] py-20 lg:py-28">
       <Container>
         {/* Header */}
-        <motion.div
-          className="text-center max-w-2xl mx-auto mb-14"
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <p className="text-[10px] text-primary-400 uppercase tracking-widest font-medium mb-3">
-            AI-Powered Styling
-          </p>
-          <h2 className="text-3xl sm:text-4xl font-display font-semibold text-primary-900 mb-4">
-            Build Your Look With
-            <br className="hidden sm:block" /> a Fashion Coach
+        <div className="mx-auto mb-14 max-w-2xl text-center lg:mb-20">
+          <h2 className="text-4xl font-semibold text-[#18213A] sm:text-5xl">
+            AI Fashion Coach Services
           </h2>
-          <p className="text-base text-primary-500 leading-relaxed">
-            Answer a few simple questions and receive personalized suggestions
-            for fit, fabric, color, size, and outfit components.
-          </p>
-        </motion.div>
+        </div>
 
-        {/* 3-panel layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          <motion.div
-            initial={{ opacity: 0, y: 32 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0 }}
-          >
-            <ChatPanel />
-          </motion.div>
+        {/* Main content */}
+        <div className="mx-auto grid max-w-[1320px] grid-cols-1 items-center gap-16 lg:grid-cols-12 lg:gap-20">
+          <div className="lg:col-span-8">
+            <LaptopMockup />
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 32 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{
-              duration: 0.55,
-              ease: [0.22, 1, 0.36, 1],
-              delay: 0.1,
-            }}
-          >
-            <ComponentsPanel />
-          </motion.div>
+          <div className="lg:col-span-4">
+            <h3 className="mb-5 text-3xl font-semibold leading-tight text-[#18213A] sm:text-4xl">
+              Build Your Look Faster
+              <br />
+              With AI-Powered Styling
+            </h3>
 
-          <motion.div
-            initial={{ opacity: 0, y: 32 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{
-              duration: 0.55,
-              ease: [0.22, 1, 0.36, 1],
-              delay: 0.2,
-            }}
-          >
-            <PreviewPanel />
-          </motion.div>
+            <p className="mb-7 max-w-md text-base leading-relaxed text-[#4F5B76]">
+              Answer a few simple questions and receive personalized suggestions
+              for fit, fabric, color, size, and outfit components. The AI coach
+              helps customers choose a better outfit direction before
+              customizing their final design.
+            </p>
+
+            <ul className="mb-9 flex flex-col gap-3">
+              {FEATURES.map((feature) => (
+                <li key={feature} className="flex items-start gap-2.5">
+                  <CheckCircle2
+                    size={16}
+                    className="mt-0.5 flex-shrink-0 text-violet-600"
+                  />
+                  <span className="text-sm text-[#4F5B76]">{feature}</span>
+                </li>
+              ))}
+            </ul>
+
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 rounded-full bg-[#5636F5] px-7 py-3.5 text-sm font-semibold tracking-wide text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#4527d9] hover:shadow-[0_12px_30px_rgba(86,54,245,0.35)]"
+            >
+              START STYLING
+              <ArrowRight size={16} />
+            </button>
+          </div>
         </div>
       </Container>
     </section>
