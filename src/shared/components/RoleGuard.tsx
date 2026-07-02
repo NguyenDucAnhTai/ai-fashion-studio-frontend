@@ -1,4 +1,5 @@
 import { type ReactNode } from "react";
+import { useAuthStore } from "../../features/auth/authStore";
 import ErrorState from "./ErrorState";
 import type { Role } from "../constants/roles";
 
@@ -26,7 +27,8 @@ function getStoredUser() {
 }
 
 export default function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
-  const user = getStoredUser();
+  const storeUser = useAuthStore((state) => state.currentUser);
+  const user = storeUser ?? getStoredUser();
   const roles = user?.roles ?? [];
   const canAccess = roles.some((role) => allowedRoles.includes(role));
 

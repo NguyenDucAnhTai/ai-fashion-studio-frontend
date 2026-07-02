@@ -16,8 +16,8 @@ const COLUMNS = [
     links: [
       { label: "My Designs", href: "/designs/my" },
       { label: "My Orders", href: "/orders/my" },
-      { label: "Payment", href: "/payment/success" },
-      { label: "Try-On", href: "/products" },
+      { label: "Checkout", href: "/designs/my" },
+      { label: "Try-On", href: "/designs/my" },
     ],
   },
   {
@@ -25,7 +25,7 @@ const COLUMNS = [
     links: [
       { label: "Staff", href: "/staff" },
       { label: "Admin", href: "/admin" },
-      { label: "Inventory", href: "/admin/inventory" },
+      { label: "Orders Queue", href: "/staff/orders" },
       { label: "Feedback Review", href: "/staff/feedbacks" },
     ],
   },
@@ -49,69 +49,81 @@ const SOCIALS = [
 export default function Footer() {
   return (
     <footer className="w-full border-t border-primary-100 bg-white">
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
-        <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-6 lg:gap-8">
-          <div className="lg:col-span-2">
-            <Link to="/" className="group mb-5 flex w-fit items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-900 transition-transform group-hover:scale-110">
-                <Scissors size={15} className="text-white" strokeWidth={2} />
+      <div className="mx-auto max-w-[1780px] px-6 py-20 sm:px-10 lg:px-16 lg:py-24">
+        <div className="flex flex-col gap-14 lg:flex-row lg:items-start lg:justify-between">
+          <div className="lg:max-w-sm">
+            <Link to="/" className="group mb-7 flex w-fit items-center gap-3">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-900 transition-transform group-hover:scale-110">
+                <Scissors size={20} className="text-white" strokeWidth={2.2} />
               </span>
-              <span className="font-display text-lg font-semibold leading-none text-primary-900">
+
+              <span className="font-display text-2xl font-semibold leading-none text-primary-900">
                 Fitwear<span className="text-accent-400"> Studio</span>
               </span>
             </Link>
 
-            <p className="mb-6 max-w-xs text-sm leading-relaxed text-primary-500">
-              AI T-shirt customization, saved design flow, virtual try-on preview, order, payment, and public feedback for the MVP demo.
+            <p className="mb-8 max-w-sm text-base leading-relaxed text-primary-500">
+              AI T-shirt customization, saved design flow, virtual try-on
+              preview, order, payment, and public feedback for the MVP demo.
             </p>
 
-            <div className="flex items-center gap-2 rounded-xl border border-primary-100 bg-beige-50 px-3 py-2.5">
+            <div className="flex max-w-sm items-center gap-3 rounded-2xl border border-primary-100 bg-beige-50 px-4 py-3.5">
               <input
                 type="email"
                 placeholder="Your email"
-                className="flex-1 bg-transparent text-xs text-primary-700 outline-none placeholder:text-primary-300"
+                className="flex-1 bg-transparent text-sm text-primary-700 outline-none placeholder:text-primary-300"
                 readOnly
               />
-              <button className="flex-shrink-0 whitespace-nowrap text-[10px] font-semibold text-accent-500 transition-colors hover:text-accent-700">
+
+              <button className="flex-shrink-0 whitespace-nowrap rounded-full bg-primary-900 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-primary-700">
                 Subscribe
               </button>
             </div>
           </div>
 
-          {COLUMNS.map((col) => (
-            <div key={col.title} className="lg:col-span-1">
-              <h3 className="mb-4 text-[10px] font-semibold uppercase tracking-widest text-primary-400">{col.title}</h3>
-              <ul className="space-y-3">
-                {col.links.map((link) => (
-                  <li key={link.label}>
-                    <Link to={link.href} className="text-sm leading-none text-primary-600 transition-colors hover:text-primary-900">
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          <div className="flex flex-wrap gap-14 sm:gap-20 lg:flex-nowrap lg:gap-24">
+            {COLUMNS.map((col) => (
+              <div key={col.title}>
+                <h3 className="mb-5 text-xs font-bold uppercase tracking-[0.18em] text-primary-400">
+                  {col.title}
+                </h3>
+
+                <ul className="space-y-4">
+                  {col.links.map((link) => (
+                    <li key={link.label}>
+                      <Link
+                        to={link.href}
+                        className="text-base leading-none text-primary-600 transition-colors hover:text-primary-950"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
       <div className="border-t border-primary-100">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-5 sm:flex-row sm:px-6 lg:px-8">
-          <p className="text-[10px] uppercase tracking-wider text-primary-300">
-            &copy; {new Date().getFullYear()} Fitwear Studio. All rights reserved.
+        <div className="mx-auto flex max-w-[1780px] flex-col items-center justify-between gap-5 px-6 py-7 sm:flex-row sm:px-10 lg:px-16">
+          <p className="text-xs font-medium uppercase tracking-[0.16em] text-primary-400">
+            &copy; {new Date().getFullYear()} Fitwear Studio. All rights
+            reserved.
           </p>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-7">
             {SOCIALS.map((social) => (
               <a
                 key={social.label}
                 href={social.href}
-                className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-primary-400 transition-colors hover:text-primary-700"
+                className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-primary-500 transition-colors hover:text-primary-800"
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 {social.label}
-                <ExternalLink size={9} />
+                <ExternalLink size={12} />
               </a>
             ))}
           </div>
