@@ -32,7 +32,7 @@ function objectToLayer(object: FabricObject, index: number): DesignLayer | null 
 
   const objectType = object.type?.toUpperCase() ?? "SHAPE";
   const isText = object.type === "i-text" || object.type === "textbox" || object.type === "text";
-  const imageSource = "getSrc" in object && typeof object.getSrc === "function" ? object.getSrc() : null;
+  const imageSource = object instanceof FabricImage ? object.getSrc() : null;
 
   return {
     layerType: isText ? "TEXT" : imageSource ? "IMAGE" : objectType,

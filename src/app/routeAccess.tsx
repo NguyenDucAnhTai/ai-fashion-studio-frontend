@@ -1,8 +1,12 @@
 import { type ReactElement } from "react";
 import AdminDashboardPage from "../features/admin/AdminDashboardPage";
+import CatalogManagementPage from "../features/admin/catalog/CatalogManagementPage";
 import AboutUsPage from "../features/about/AboutUsPage";
+import ForgotPasswordPage from "../features/auth/ForgotPasswordPage";
 import LoginPage from "../features/auth/LoginPage";
 import RegisterPage from "../features/auth/RegisterPage";
+import ResetPasswordPage from "../features/auth/ResetPasswordPage";
+import VerifyResetOtpPage from "../features/auth/VerifyResetOtpPage";
 import ProductDetailPage from "../features/catalog/ProductDetailPage";
 import ProductListPage from "../features/catalog/ProductListPage";
 import DesignEditorPage from "../features/design/DesignEditorPage";
@@ -46,6 +50,9 @@ export const ROUTE_ACCESS: RouteAccessEntry[] = [
   { path: "feedbacks", element: <PublicFeedbackList /> },
   { path: "login", element: <LoginPage /> },
   { path: "register", element: <RegisterPage /> },
+  { path: "forgot-password", element: <ForgotPasswordPage /> },
+  { path: "verify-reset-otp", element: <VerifyResetOtpPage /> },
+  { path: "reset-password", element: <ResetPasswordPage /> },
   {
     path: "designs/my",
     element: <MyDesignsPage />,
@@ -122,13 +129,23 @@ export const ROUTE_ACCESS: RouteAccessEntry[] = [
     roles: ROLE_GROUPS.staffAndAdmin,
   },
   {
+    path: "staff/orders/:orderId/print",
+    element: <PrintInfoPage />,
+    roles: ROLE_GROUPS.staffAndAdmin,
+  },
+  {
     path: "staff/feedbacks",
     element: <FeedbackModerationPage />,
     roles: ROLE_GROUPS.staffAndAdmin,
   },
   {
-    path: "admin/dashboard",
+    path: "admin",
     element: <AdminDashboardPage />,
+    roles: ROLE_GROUPS.adminOnly,
+  },
+  {
+    path: "admin/catalogs",
+    element: <CatalogManagementPage />,
     roles: ROLE_GROUPS.adminOnly,
   },
 ];

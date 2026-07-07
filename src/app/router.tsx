@@ -1,25 +1,137 @@
-import { createBrowserRouter, type RouteObject } from "react-router-dom";
+import { type ReactElement } from "react";
+import { createBrowserRouter, Navigate } from "react-router-dom";
+import AdminDashboardPage from "../features/admin/AdminDashboardPage";
 import AdminLoginPage from "../features/admin/AdminLoginPage";
+import CatalogManagementPage from "../features/admin/catalog/CatalogManagementPage";
+import AboutUsPage from "../features/about/AboutUsPage";
+import ForgotPasswordPage from "../features/auth/ForgotPasswordPage";
+import LoginPage from "../features/auth/LoginPage";
+import RegisterPage from "../features/auth/RegisterPage";
+import ResetPasswordPage from "../features/auth/ResetPasswordPage";
+import VerifyResetOtpPage from "../features/auth/VerifyResetOtpPage";
+import ProductDetailPage from "../features/catalog/ProductDetailPage";
+import ProductListPage from "../features/catalog/ProductListPage";
+import DesignEditorPage from "../features/design/DesignEditorPage";
+import MyDesignsPage from "../features/design/MyDesignsPage";
+import FeedbackModerationPage from "../features/feedback/FeedbackModerationPage";
+import PublicFeedbackList from "../features/feedback/PublicFeedbackList";
+import SubmitFeedbackPage from "../features/feedback/SubmitFeedbackPage";
+import LandingPage from "../features/landing/LandingPage";
+import CheckoutPage from "../features/order/CheckoutPage";
+import MyOrdersPage from "../features/order/MyOrdersPage";
+import OrderDetailPage from "../features/order/OrderDetailPage";
+import PaymentCancelPage from "../features/payment/PaymentCancelPage";
+import PaymentPage from "../features/payment/PaymentPage";
+import PaymentSuccessPage from "../features/payment/PaymentSuccessPage";
+import PrintInfoPage from "../features/staff/PrintInfoPage";
+import StaffDashboardPage from "../features/staff/StaffDashboardPage";
+import StaffOrderDetailPage from "../features/staff/StaffOrderDetailPage";
+import StaffOrderListPage from "../features/staff/StaffOrderListPage";
+import TryOnPage from "../features/tryon/TryOnPage";
+import TryOnResultPage from "../features/tryon/TryOnResultPage";
+import GuestRoute from "../shared/components/GuestRoute";
 import ProtectedRoute from "../shared/components/ProtectedRoute";
 import RoleGuard from "../shared/components/RoleGuard";
+import { ROLES, type Role } from "../shared/constants/roles";
 import MainLayout from "../shared/layouts/MainLayout";
-import { ROUTE_ACCESS } from "./routeAccess";
 
-function toRouteObject({ path, element, roles }: (typeof ROUTE_ACCESS)[number]): RouteObject {
-  const guardedElement = roles ? <RoleGuard allowedRoles={roles}>{element}</RoleGuard> : element;
-  const finalElement = roles ? <ProtectedRoute>{guardedElement}</ProtectedRoute> : guardedElement;
+const customerOnly: Role[] = [ROLES.customer];
+const staffRoles: Role[] = [ROLES.staff, ROLES.admin];
+const adminOnly: Role[] = [ROLES.admin];
 
-  return path === "" ? { index: true, element: finalElement } : { path, element: finalElement };
+function protect(element: ReactElement, roles?: Role[]) {
+  const guardedElement = roles ? (
+    <RoleGuard allowedRoles={roles}>{element}</RoleGuard>
+  ) : (
+    element
+  );
+  return <ProtectedRoute>{guardedElement}</ProtectedRoute>;
 }
 
 export const router = createBrowserRouter([
   {
-    path: "/admin",
-    element: <AdminLoginPage />,
-  },
-  {
     path: "/",
     element: <MainLayout />,
-    children: ROUTE_ACCESS.map(toRouteObject),
+    children: [
+      { index: true, element: <LandingPage /> },
+      { path: "products", element: <ProductListPage /> },
+      { path: "products/:productId", element: <ProductDetailPage /> },
+      { path: "about-us", element: <AboutUsPage /> },
+      { path: "feedbacks", element: <PublicFeedbackList /> },
+      { path: "login", element: <GuestRoute><LoginPage /></GuestRoute> },
+      { path: "register", element: <GuestRoute><RegisterPage /></GuestRoute> },
+      { path: "forgot-password", element: <ForgotPasswordPage /> },
+      { path: "verify-reset-otp", element: <VerifyResetOtpPage /> },
+      { path: "reset-password", element: <ResetPasswordPage /> },
+      { path: "designs/my", element: protect(<MyDesignsPage />, customerOnly) },
+      {
+        path: "designs/:designId/editor",
+        element: protect(<DesignEditorPage />, customerOnly),
+      },
+      {
+        path: "tryon/:designId",
+        element: protect(<TryOnPage />, customerOnly),
+      },
+      {
+        path: "tryon/result/:requestId",
+        element: protect(<TryOnResultPage />, customerOnly),
+      },
+      {
+        path: "checkout/:designId",
+        element: protect(<CheckoutPage />, customerOnly),
+      },
+      {
+        path: "payment/:orderId",
+        element: protect(<PaymentPage />, customerOnly),
+      },
+      {
+        path: "payment/success",
+        element: protect(<PaymentSuccessPage />, customerOnly),
+      },
+      {
+        path: "payment/cancel",
+        element: protect(<PaymentCancelPage />, customerOnly),
+      },
+      { path: "orders/my", element: protect(<MyOrdersPage />, customerOnly) },
+      {
+        path: "orders/:orderId",
+        element: protect(<OrderDetailPage />, customerOnly),
+      },
+      {
+        path: "orders/:orderId/feedback",
+        element: protect(<SubmitFeedbackPage />, customerOnly),
+      },
+      { path: "staff", element: protect(<StaffDashboardPage />, staffRoles) },
+      {
+        path: "staff/orders",
+        element: protect(<StaffOrderListPage />, staffRoles),
+      },
+      {
+        path: "staff/orders/:orderId",
+        element: protect(<StaffOrderDetailPage />, staffRoles),
+      },
+      {
+        path: "staff/orders/:orderId/print-info",
+        element: protect(<PrintInfoPage />, staffRoles),
+      },
+      {
+        path: "staff/orders/:orderId/print",
+        element: protect(<PrintInfoPage />, staffRoles),
+      },
+      {
+        path: "staff/feedbacks",
+        element: protect(<FeedbackModerationPage />, staffRoles),
+      },
+      { path: "admin/login", element: <GuestRoute><AdminLoginPage /></GuestRoute> },
+      { path: "admin", element: protect(<AdminDashboardPage />, adminOnly) },
+      {
+        path: "admin/dashboard",
+        element: <Navigate to="/admin" replace />,
+      },
+      {
+        path: "admin/catalogs",
+        element: protect(<CatalogManagementPage />, adminOnly),
+      },
+    ],
   },
 ]);
