@@ -23,10 +23,17 @@ export default function RegisterPage() {
   });
 
   const onSubmit = (values: RegisterFormValues) => {
+    const phone = values.phone?.trim();
+
     registerMutation.mutate(
-      { ...values, phone: values.phone || undefined },
       {
-        onSuccess: () => navigate("/login", { replace: true }),
+        email: values.email,
+        password: values.password,
+        fullName: values.fullName.trim(),
+        ...(phone ? { phone } : {}),
+      },
+      {
+        onSuccess: () => navigate("/login?registered=1", { replace: true }),
       },
     );
   };

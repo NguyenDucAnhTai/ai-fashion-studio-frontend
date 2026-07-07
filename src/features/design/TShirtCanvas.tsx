@@ -43,7 +43,6 @@ export default function TShirtCanvas({ canvasJson, locked, onReady, onSelectionC
     (shirtArea as NamedFabricObject).name = "shirt-area";
 
     canvas.add(shirtArea);
-    canvas.sendObjectToBack(shirtArea);
     canvas.on("selection:created", (event) => onSelectionChange(event.selected?.[0] ?? null));
     canvas.on("selection:updated", (event) => onSelectionChange(event.selected?.[0] ?? null));
     canvas.on("selection:cleared", () => onSelectionChange(null));

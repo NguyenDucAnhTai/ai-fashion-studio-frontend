@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LogIn, PackageCheck, Shirt, Sparkles, Star } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
   Link,
@@ -13,21 +13,11 @@ import Button from "../../shared/components/Button";
 import Container from "../../shared/components/Container";
 import Input from "../../shared/components/Input";
 import { ROLES } from "../../shared/constants/roles";
-import { useLoginMutation } from "./api";
+import { getCurrentUser, useLoginMutation } from "./api";
 import { useAuthStore } from "./authStore";
+import { normalizeAuthResponse } from "./normalizers";
+import { getRoleRedirect, isRedirectAllowedForRoles } from "./roleRedirect";
 import { loginSchema, type LoginFormValues } from "./schemas";
-
-function getRoleRedirect(roles: string[]) {
-  if (roles.includes(ROLES.admin)) {
-    return "/admin/dashboard";
-  }
-
-  if (roles.includes(ROLES.staff)) {
-    return "/staff";
-  }
-
-  return "/";
-}
 
 const CUSTOMER_BENEFITS = [
   {
@@ -57,7 +47,9 @@ export default function LoginPage() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const setSession = useAuthStore((state) => state.setSession);
+  const setCurrentUser = useAuthStore((state) => state.setCurrentUser);
   const loginMutation = useLoginMutation();
+  const [authMessage, setAuthMessage] = useState("");
   const {
     register,
     handleSubmit,
@@ -76,16 +68,42 @@ export default function LoginPage() {
   }, [location.state, searchParams]);
 
   const onSubmit = (values: LoginFormValues) => {
+    setAuthMessage("");
     loginMutation.mutate(values, {
-      onSuccess: (response) => {
-        if (!response.data) {
-          return;
+      onSuccess: async (response) => {
+        const session = normalizeAuthResponse(response);
+        let user = session.user;
+
+        setSession(session);
+
+        if (!user || user.roles.length === 0) {
+          try {
+            const meResponse = await getCurrentUser();
+            user = meResponse.data ?? user;
+          } catch {
+            user = user ?? null;
+          }
         }
 
-        setSession(response.data);
-        navigate(redirectTarget || getRoleRedirect(response.data.user.roles), {
-          replace: true,
-        });
+        if (!user) {
+          // TODO: remove this CUSTOMER fallback when backend always returns /me after login.
+          user = { email: values.email, roles: [ROLES.customer], role: ROLES.customer };
+        } else if (user.roles.length === 0) {
+          // TODO: remove this CUSTOMER fallback when backend always returns role/roles.
+          user = { ...user, roles: [ROLES.customer], role: ROLES.customer };
+        }
+
+        setCurrentUser(user);
+
+        const roles = user.roles.length ? user.roles : [ROLES.customer];
+        const target = isRedirectAllowedForRoles(redirectTarget, roles)
+          ? redirectTarget
+          : getRoleRedirect(roles);
+
+        navigate(target, { replace: true });
+      },
+      onError: (error) => {
+        setAuthMessage(getApiErrorMessage(error));
       },
     });
   };
@@ -128,7 +146,7 @@ export default function LoginPage() {
 
               {loginMutation.isError && (
                 <p className="rounded-2xl bg-error-50 px-4 py-3 text-sm text-error-700">
-                  {getApiErrorMessage(loginMutation.error)}
+                  {authMessage || getApiErrorMessage(loginMutation.error)}
                 </p>
               )}
 
@@ -144,6 +162,15 @@ export default function LoginPage() {
             </form>
 
             <p className="mt-6 text-sm text-primary-500">
+              <Link
+                to="/forgot-password"
+                className="font-semibold text-primary-950 underline underline-offset-4"
+              >
+                Forgot password?
+              </Link>
+            </p>
+
+            <p className="mt-3 text-sm text-primary-500">
               New customer?{" "}
               <Link
                 to="/register"

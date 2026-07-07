@@ -3,8 +3,9 @@ import { ShieldCheck } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useLoginMutation } from "../auth/api";
+import { getCurrentUser, useLoginMutation } from "../auth/api";
 import { useAuthStore } from "../auth/authStore";
+import { normalizeAuthResponse } from "../auth/normalizers";
 import { loginSchema, type LoginFormValues } from "../auth/schemas";
 import { getApiErrorMessage } from "../../shared/api/httpClient";
 import Button from "../../shared/components/Button";
@@ -16,6 +17,8 @@ export default function AdminLoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const setSession = useAuthStore((state) => state.setSession);
+  const setCurrentUser = useAuthStore((state) => state.setCurrentUser);
+  const clearSession = useAuthStore((state) => state.clearSession);
   const loginMutation = useLoginMutation();
   const [accessDeniedMessage, setAccessDeniedMessage] = useState("");
   const {
@@ -31,23 +34,34 @@ export default function AdminLoginPage() {
     const stateRedirect = (
       location.state as { from?: { pathname?: string } } | null
     )?.from?.pathname;
-    return stateRedirect ?? "/admin/dashboard";
+    return stateRedirect ?? "/admin";
   }, [location.state]);
 
   const onSubmit = (values: LoginFormValues) => {
     setAccessDeniedMessage("");
     loginMutation.mutate(values, {
-      onSuccess: (response) => {
-        if (!response.data) {
-          return;
+      onSuccess: async (response) => {
+        const session = normalizeAuthResponse(response);
+        let user = session.user;
+
+        setSession(session);
+
+        if (!user || user.roles.length === 0) {
+          try {
+            const meResponse = await getCurrentUser();
+            user = meResponse.data ?? user;
+          } catch {
+            user = user ?? null;
+          }
         }
 
-        if (!response.data.user.roles.includes(ROLES.admin)) {
+        if (!user?.roles.includes(ROLES.admin)) {
+          clearSession();
           setAccessDeniedMessage("This account does not have admin access.");
           return;
         }
 
-        setSession(response.data);
+        setCurrentUser(user);
         navigate(redirectTarget, { replace: true });
       },
     });

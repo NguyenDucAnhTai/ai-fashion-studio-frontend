@@ -1,11 +1,12 @@
 import type { Role } from "../../shared/constants/roles";
 
 export interface CurrentUser {
-  id: string;
+  id?: string;
   email: string;
-  fullName: string;
+  fullName?: string;
   phone?: string | null;
   avatarUrl?: string | null;
+  role?: Role;
   roles: Role[];
   status?: string;
 }
@@ -30,14 +31,35 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
-  user: CurrentUser;
+  accessToken?: string | null;
+  refreshToken?: string | null;
+  expiresIn?: number;
+  user?: CurrentUser | null;
 }
 
 export interface RefreshTokenResponse {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
+  accessToken?: string | null;
+  refreshToken?: string | null;
+  expiresIn?: number;
+}
+
+export interface NormalizedAuthSession {
+  accessToken: string | null;
+  refreshToken: string | null;
+  user: CurrentUser | null;
+}
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface VerifyResetOtpRequest {
+  email: string;
+  otp: string;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+  otp: string;
+  newPassword: string;
 }

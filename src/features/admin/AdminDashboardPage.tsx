@@ -3,10 +3,30 @@ import { Link } from "react-router-dom";
 import Container from "../../shared/components/Container";
 
 const ADMIN_LINKS = [
-  { label: "Staff Orders", description: "Review production queue and order details.", href: "/staff/orders", icon: ClipboardList },
-  { label: "Feedback Review", description: "Approve, hide, or reject feedback by ID.", href: "/staff/feedbacks", icon: MessageSquare },
-  { label: "Products", description: "Product management is deferred after the end-to-end demo.", href: "/products", icon: Shirt },
-  { label: "Inventory", description: "Inventory management is out of this MVP pass.", href: "/admin/dashboard", icon: Boxes },
+  {
+    label: "Catalog Management",
+    description: "Create catalogs and inspect data from Swagger catalog APIs.",
+    href: "/admin/catalogs",
+    icon: Boxes,
+  },
+  {
+    label: "Staff Orders",
+    description: "Review production queue and order details.",
+    href: "/staff/orders",
+    icon: ClipboardList,
+  },
+  {
+    label: "Feedback Review",
+    description: "Approve, hide, or reject feedback by ID.",
+    href: "/staff/feedbacks",
+    icon: MessageSquare,
+  },
+  {
+    label: "Products",
+    description: "Product management remains separate from catalog management.",
+    href: "/products",
+    icon: Shirt,
+  },
 ];
 
 export default function AdminDashboardPage() {
@@ -15,9 +35,11 @@ export default function AdminDashboardPage() {
       <Container>
         <div className="mb-8">
           <p className="text-sm font-semibold text-accent-600">Admin hub</p>
-          <h1 className="mt-3 font-display text-4xl font-semibold text-primary-950">MVP operations shortcuts</h1>
+          <h1 className="mt-3 font-display text-4xl font-semibold text-primary-950">
+            MVP operations shortcuts
+          </h1>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-primary-500">
-            This admin dashboard stays intentionally simple for the end-to-end demo. Full product/category/inventory CRUD is deferred.
+            Manage catalog data from the running backend, then continue to production and feedback operations.
           </p>
         </div>
 
@@ -26,7 +48,11 @@ export default function AdminDashboardPage() {
             const Icon = item.icon;
 
             return (
-              <Link key={item.label} to={item.href} className="rounded-3xl border border-primary-100 bg-white p-6 shadow-soft transition hover:-translate-y-1">
+              <Link
+                key={item.label}
+                to={item.href}
+                className="rounded-3xl border border-primary-100 bg-white p-6 shadow-soft transition hover:-translate-y-1"
+              >
                 <Icon className="text-accent-500" size={26} />
                 <h2 className="mt-5 text-xl font-semibold text-primary-950">{item.label}</h2>
                 <p className="mt-2 text-sm leading-6 text-primary-500">{item.description}</p>

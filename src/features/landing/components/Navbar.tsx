@@ -10,8 +10,8 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { useLogoutMutation } from "../../auth/api";
 import { useAuthStore } from "../../auth/authStore";
+import { getRoleRedirect, getUserRoles } from "../../auth/roleRedirect";
 import Logo from "../../../shared/components/Logo";
-import { ROLES } from "../../../shared/constants/roles";
 import { NAV_ITEMS } from "../../../shared/constants/navItems";
 import MegaMenu from "./MegaMenu";
 
@@ -52,11 +52,9 @@ export default function Navbar() {
     });
   };
 
-  const dashboardHref = currentUser?.roles.includes(ROLES.admin)
-    ? "/admin/dashboard"
-    : currentUser?.roles.includes(ROLES.staff)
-      ? "/staff"
-      : "/designs/my";
+  const userRoles = getUserRoles(currentUser);
+  const dashboardHref = currentUser ? getRoleRedirect(userRoles) : "/";
+  const accountLabel = currentUser?.fullName ?? currentUser?.email ?? "Account";
 
   return (
     <>
@@ -123,7 +121,7 @@ export default function Navbar() {
                       className="flex items-center gap-2 text-[15px] font-semibold text-[#1f2937] transition-colors hover:text-black"
                     >
                       <UserRound size={16} />
-                      {currentUser.fullName}
+                      {accountLabel}
                     </Link>
                     <button
                       type="button"
@@ -207,7 +205,7 @@ export default function Navbar() {
                   className="rounded-full border border-primary-900 px-4 py-2 text-center text-sm font-medium text-primary-900 transition hover:bg-primary-900 hover:text-white"
                   onClick={() => setMobileOpen(false)}
                 >
-                  {currentUser.fullName}
+                  {accountLabel}
                 </Link>
                 <button
                   type="button"

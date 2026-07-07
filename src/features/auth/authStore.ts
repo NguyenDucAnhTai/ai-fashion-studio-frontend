@@ -1,13 +1,15 @@
 import { create } from "zustand";
 import type { Role } from "../../shared/constants/roles";
-import type { CurrentUser, LoginResponse } from "./types";
+import { normalizeUser } from "./normalizers";
+import type { CurrentUser, NormalizedAuthSession } from "./types";
 
 interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
   currentUser: CurrentUser | null;
   hydrated: boolean;
-  setSession: (session: LoginResponse) => void;
+  isAuthenticated: boolean;
+  setSession: (session: NormalizedAuthSession) => void;
   setCurrentUser: (user: CurrentUser | null) => void;
   initFromStorage: () => void;
   clearSession: () => void;
@@ -22,7 +24,7 @@ function readStoredUser() {
   }
 
   try {
-    return JSON.parse(rawUser) as CurrentUser;
+    return normalizeUser(JSON.parse(rawUser));
   } catch {
     return null;
   }
@@ -33,15 +35,32 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   refreshToken: null,
   currentUser: null,
   hydrated: false,
+  isAuthenticated: false,
   setSession: (session) => {
-    localStorage.setItem("accessToken", session.accessToken);
-    localStorage.setItem("refreshToken", session.refreshToken);
-    localStorage.setItem("currentUser", JSON.stringify(session.user));
+    if (session.accessToken) {
+      localStorage.setItem("accessToken", session.accessToken);
+    } else {
+      localStorage.removeItem("accessToken");
+    }
+
+    if (session.refreshToken) {
+      localStorage.setItem("refreshToken", session.refreshToken);
+    } else {
+      localStorage.removeItem("refreshToken");
+    }
+
+    if (session.user) {
+      localStorage.setItem("currentUser", JSON.stringify(session.user));
+    } else {
+      localStorage.removeItem("currentUser");
+    }
+
     set({
       accessToken: session.accessToken,
       refreshToken: session.refreshToken,
       currentUser: session.user,
       hydrated: true,
+      isAuthenticated: Boolean(session.accessToken || session.user),
     });
   },
   setCurrentUser: (user) => {
@@ -51,24 +70,39 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       localStorage.removeItem("currentUser");
     }
 
-    set({ currentUser: user });
+    set((state) => ({
+      currentUser: user,
+      isAuthenticated: Boolean(state.accessToken || user),
+    }));
   },
   initFromStorage: () => {
+    const accessToken = localStorage.getItem("accessToken");
+    const refreshToken = localStorage.getItem("refreshToken");
+    const currentUser = readStoredUser();
+
     set({
-      accessToken: localStorage.getItem("accessToken"),
-      refreshToken: localStorage.getItem("refreshToken"),
-      currentUser: readStoredUser(),
+      accessToken,
+      refreshToken,
+      currentUser,
       hydrated: true,
+      isAuthenticated: Boolean(accessToken || currentUser),
     });
   },
   clearSession: () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("currentUser");
-    set({ accessToken: null, refreshToken: null, currentUser: null, hydrated: true });
+    set({
+      accessToken: null,
+      refreshToken: null,
+      currentUser: null,
+      hydrated: true,
+      isAuthenticated: false,
+    });
   },
   hasAnyRole: (roles) => {
-    const userRoles = get().currentUser?.roles ?? readStoredUser()?.roles ?? [];
+    const user = get().currentUser ?? readStoredUser();
+    const userRoles = user?.roles ?? (user?.role ? [user.role] : []);
     return userRoles.some((role) => roles.includes(role));
   },
 }));
