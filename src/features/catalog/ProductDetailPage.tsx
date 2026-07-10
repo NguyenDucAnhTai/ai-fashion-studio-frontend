@@ -1,5 +1,5 @@
 ﻿import { ArrowRight, CheckCircle2, ShieldCheck } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Button from "../../shared/components/Button";
 import Container from "../../shared/components/Container";
@@ -19,13 +19,8 @@ export default function ProductDetailPage() {
   const product = productQuery.data?.data ?? (productQuery.isError ? findMockProduct(productId) : null);
   const variants = useMemo(() => product?.variants ?? [], [product]);
   const [selectedVariantId, setSelectedVariantId] = useState("");
-  const selectedVariant = variants.find((variant) => variant.id === selectedVariantId) ?? variants[0];
-
-  useEffect(() => {
-    if (!selectedVariantId && variants[0]) {
-      setSelectedVariantId(variants[0].id);
-    }
-  }, [selectedVariantId, variants]);
+  const selectedVariant =
+    variants.find((variant) => variant.id === selectedVariantId) ?? variants[0];
 
   if (productQuery.isLoading) {
     return (

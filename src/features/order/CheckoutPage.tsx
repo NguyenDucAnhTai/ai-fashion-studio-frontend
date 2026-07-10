@@ -16,7 +16,11 @@ import { useProductDetailQuery } from "../catalog/api";
 import DesignPreview from "../design/DesignPreview";
 import { useDesignDetailQuery } from "../design/api";
 import { useCreateOrderMutation } from "./api";
-import { createCheckoutSchema, type CheckoutFormValues } from "./schemas";
+import {
+  createCheckoutSchema,
+  type CheckoutFormValues,
+  type CheckoutInputValues,
+} from "./schemas";
 
 export default function CheckoutPage() {
   const { designId = "" } = useParams();
@@ -36,12 +40,12 @@ export default function CheckoutPage() {
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm<CheckoutFormValues>({
+  } = useForm<CheckoutInputValues, unknown, CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
     mode: "onBlur",
     defaultValues: { receiverName: "", receiverPhone: "", shippingAddress: "", quantity: 1 },
   });
-  const quantity = watch("quantity") || 1;
+  const quantity = Number(watch("quantity") || 1);
   const totalAmount = product && variant ? (product.basePrice + variant.priceAdjustment) * quantity : 0;
 
   const onSubmit = (values: CheckoutFormValues) => {

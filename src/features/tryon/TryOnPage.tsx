@@ -14,7 +14,11 @@ import { DESIGN_STATUS, getDesignStatusTone } from "../../shared/constants/desig
 import DesignPreview from "../design/DesignPreview";
 import { useDesignDetailQuery } from "../design/api";
 import { useCreateTryOnMutation } from "./api";
-import { tryOnSchema, type TryOnFormValues } from "./schemas";
+import {
+  tryOnSchema,
+  type TryOnFormValues,
+  type TryOnInputValues,
+} from "./schemas";
 
 function fileToDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
@@ -35,7 +39,7 @@ export default function TryOnPage() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<TryOnFormValues>({
+  } = useForm<TryOnInputValues, unknown, TryOnFormValues>({
     resolver: zodResolver(tryOnSchema),
     mode: "onBlur",
     defaultValues: { heightCm: 170, weightKg: 60 },

@@ -16,4 +16,5 @@ export function createCheckoutSchema(maxQuantity: number) {
   });
 }
 
-export type CheckoutFormValues = z.infer<ReturnType<typeof createCheckoutSchema>>;
+export type CheckoutInputValues = z.input<ReturnType<typeof createCheckoutSchema>>;
+export type CheckoutFormValues = z.output<ReturnType<typeof createCheckoutSchema>>;

@@ -2,8 +2,9 @@ import axios, { AxiosError, type AxiosRequestConfig } from "axios";
 import type { ApiResponse } from "./apiResponse";
 import { useAuthStore } from "../../features/auth/authStore";
 
-const API_BASE_URL =
+const RAW_API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
+const API_BASE_URL = RAW_API_BASE_URL.replace(/\/api\/?$/, "");
 
 const AUTH_ENTRYPOINTS = [
   "/api/auth/login",

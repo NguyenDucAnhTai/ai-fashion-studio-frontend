@@ -135,7 +135,7 @@ export default function DesignEditorPage() {
       return;
     }
 
-    const canvasJson = canvas.toJSON(["name", "src"]) as Record<string, unknown>;
+    const canvasJson = canvas.toJSON() as Record<string, unknown>;
     const imageUrl = canvas.toDataURL({ format: "png", quality: 0.95, multiplier: 2 });
     const layers = canvas
       .getObjects()

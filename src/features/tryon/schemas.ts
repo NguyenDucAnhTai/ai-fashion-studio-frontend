@@ -5,4 +5,5 @@ export const tryOnSchema = z.object({
   weightKg: z.coerce.number().min(20, "Weight must be at least 20 kg").max(300, "Weight must be at most 300 kg"),
 });
 
-export type TryOnFormValues = z.infer<typeof tryOnSchema>;
+export type TryOnInputValues = z.input<typeof tryOnSchema>;
+export type TryOnFormValues = z.output<typeof tryOnSchema>;
