@@ -1,10 +1,11 @@
 import { ClipboardList, Factory, MessageSquare } from "lucide-react";
 import { Link } from "react-router-dom";
-import Badge from "../../shared/components/Badge";
 import Container from "../../shared/components/Container";
+import EmptyState from "../../shared/components/EmptyState";
 import ErrorState from "../../shared/components/ErrorState";
 import Loading from "../../shared/components/Loading";
-import { ORDER_STATUS, getOrderStatusTone } from "../../shared/constants/orderStatus";
+import OrderStatusBadge from "../../shared/components/OrderStatusBadge";
+import { ORDER_STATUS } from "../../shared/constants/orderStatus";
 import { formatCurrency } from "../../shared/utils/formatCurrency";
 import { useStaffOrdersQuery } from "./api";
 
@@ -40,6 +41,9 @@ export default function StaffDashboardPage() {
 
         {ordersQuery.isLoading && <Loading label="Loading paid orders..." />}
         {ordersQuery.isError && <ErrorState description="Could not load staff orders." />}
+        {!ordersQuery.isLoading && !ordersQuery.isError && orders.length === 0 && (
+          <EmptyState title="No paid orders" description="There are no paid orders waiting for production right now." />
+        )}
         {orders.length > 0 && (
           <div className="rounded-3xl border border-primary-100 bg-white p-6 shadow-soft">
             <h2 className="text-lg font-semibold text-primary-950">Recent paid orders</h2>
@@ -50,7 +54,7 @@ export default function StaffDashboardPage() {
                     <p className="font-semibold text-primary-950">{order.orderCode}</p>
                     <p className="mt-1 text-sm text-primary-500">{formatCurrency(order.totalAmount)}</p>
                   </div>
-                  <Badge tone={getOrderStatusTone(order.orderStatus)}>{order.orderStatus}</Badge>
+                  <OrderStatusBadge status={order.orderStatus} />
                 </Link>
               ))}
             </div>

@@ -1,9 +1,9 @@
-﻿import { Star } from "lucide-react";
-import { useMemo } from "react";
+﻿import { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import Container from "../../shared/components/Container";
 import EmptyState from "../../shared/components/EmptyState";
 import Loading from "../../shared/components/Loading";
+import RatingInput from "../../shared/components/RatingInput";
 import { formatDate } from "../../shared/utils/formatDate";
 import { usePublicFeedbackQuery } from "./api";
 import { MOCK_PUBLIC_FEEDBACKS } from "./mockData";
@@ -79,11 +79,7 @@ export default function PublicFeedbackList() {
                   </div>
                   <div className="flex flex-col p-6">
                     <div className="mb-5 flex items-center justify-between gap-4">
-                      <div className="flex gap-1 text-accent-500">
-                        {Array.from({ length: 5 }).map((_, starIndex) => (
-                          <Star key={starIndex} size={15} fill={starIndex < feedback.rating ? "currentColor" : "none"} />
-                        ))}
-                      </div>
+                      <RatingInput value={feedback.rating} />
                       <span className="text-xs text-primary-400">{formatDate(feedback.createdAt)}</span>
                     </div>
                     <p className="flex-1 text-sm leading-7 text-primary-600">{feedback.comment}</p>

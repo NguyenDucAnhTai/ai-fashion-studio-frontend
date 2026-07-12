@@ -497,6 +497,7 @@ class App {
   isDown = false;
   start = 0;
   raf = 0;
+  isPaused = false;
   boundOnResize!: () => void;
   boundOnWheel!: (e: WheelEvent) => void;
   boundOnTouchDown!: (e: MouseEvent | TouchEvent) => void;
@@ -663,6 +664,18 @@ class App {
     this.raf = window.requestAnimationFrame(this.update.bind(this));
   }
 
+  pause() {
+    if (this.isPaused) return;
+    this.isPaused = true;
+    window.cancelAnimationFrame(this.raf);
+  }
+
+  resume() {
+    if (!this.isPaused) return;
+    this.isPaused = false;
+    this.update();
+  }
+
   addEventListeners() {
     this.boundOnResize = this.onResize.bind(this);
     this.boundOnWheel = this.onWheel.bind(this);
@@ -715,14 +728,14 @@ export default function CircularGallery({
   scrollEase = 0.05,
 }: CircularGalleryProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const appRef = useRef<App | undefined>(undefined);
 
   useEffect(() => {
     if (!containerRef.current) return;
-    let app: App | undefined;
     let isMounted = true;
     resolveFont(font, fontUrl).then((resolvedFont) => {
       if (!isMounted || !containerRef.current) return;
-      app = new App(containerRef.current, {
+      appRef.current = new App(containerRef.current, {
         items,
         bend,
         textColor,
@@ -735,9 +748,29 @@ export default function CircularGallery({
 
     return () => {
       isMounted = false;
-      if (app) app.destroy();
+      appRef.current?.destroy();
+      appRef.current = undefined;
     };
   }, [items, bend, textColor, borderRadius, font, fontUrl, scrollSpeed, scrollEase]);
+
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          appRef.current?.resume();
+        } else {
+          appRef.current?.pause();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(node);
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div

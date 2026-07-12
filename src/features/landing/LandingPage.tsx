@@ -3,7 +3,7 @@ import FeaturedProducts from "./components/FeaturedProducts";
 import FeedbackPreview from "./components/FeedbackPreview";
 import Footer from "./components/Footer";
 import HeroSection from "./components/HeroSection";
-// import HowItWorks from "./components/HowItWorks";
+import HowItWorks from "./components/HowItWorks";
 import StyleDiscoverySection from "./components/StyleDiscoverySection";
 import TryOnIntro from "./components/TryOnIntro";
 
@@ -13,7 +13,7 @@ export default function LandingPage() {
       <HeroSection />
       <FeaturedProducts />
       <StyleDiscoverySection />
-      {/* <HowItWorks /> */}
+      <HowItWorks />
       <TryOnIntro />
       <FeedbackPreview />
       <CTASection />

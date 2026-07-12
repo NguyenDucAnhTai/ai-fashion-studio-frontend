@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import {
   OrbitControls,
   Float,
@@ -117,8 +117,24 @@ export default function Hero3DPreview({
   fabric,
   fit,
 }: Hero3DPreviewProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(true);
+
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsVisible(entry.isIntersecting),
+      { rootMargin: "200px" },
+    );
+    observer.observe(node);
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className="relative h-[520px] w-full sm:h-[620px] lg:h-[760px]">
+    <div ref={containerRef} className="relative h-[520px] w-full sm:h-[620px] lg:h-[760px]">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-1/2 top-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-300/20 blur-[140px]" />
         <div className="absolute left-1/2 top-1/2 h-[320px] w-[320px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-200/15 blur-[100px]" />
@@ -127,6 +143,7 @@ export default function Hero3DPreview({
       <Canvas
         gl={{ alpha: true, antialias: true }}
         camera={{ position: [0, 0.2, 4], fov: 28 }}
+        frameloop={isVisible ? "always" : "never"}
         className="!bg-transparent"
       >
         <ambientLight intensity={1.15} />
