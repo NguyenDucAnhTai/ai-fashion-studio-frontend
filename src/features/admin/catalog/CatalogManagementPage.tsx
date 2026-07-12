@@ -1,4 +1,4 @@
-import { Boxes, Eye, Plus } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Boxes, Eye, Plus, Search, X } from "lucide-react";
 import { type FormEvent, useMemo, useState } from "react";
 import { getApiErrorMessage } from "../../../shared/api/httpClient";
 import Badge from "../../../shared/components/Badge";
@@ -8,6 +8,7 @@ import EmptyState from "../../../shared/components/EmptyState";
 import ErrorState from "../../../shared/components/ErrorState";
 import Input from "../../../shared/components/Input";
 import Loading from "../../../shared/components/Loading";
+import Select from "../../../shared/components/Select";
 import Textarea from "../../../shared/components/Textarea";
 import type { BadgeTone } from "../../../shared/types";
 import { formatCurrency } from "../../../shared/utils/formatCurrency";
@@ -31,6 +32,9 @@ function getCatalogStatusTone(status: string): BadgeTone {
   return "neutral";
 }
 
+type SortKey = "name" | "basePrice" | "updatedAt";
+type SortDir = "asc" | "desc";
+
 export default function CatalogManagementPage() {
   const catalogsQuery = useAdminCatalogsQuery();
   const createCatalog = useCreateAdminCatalogMutation();
@@ -42,6 +46,69 @@ export default function CatalogManagementPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [basePrice, setBasePrice] = useState("0");
+
+  const [keyword, setKeyword] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+  const statusOptions = useMemo(
+    () => Array.from(new Set(catalogs.map((catalog) => catalog.status))).sort(),
+    [catalogs],
+  );
+
+  const visibleCatalogs = useMemo(() => {
+    const normalizedKeyword = keyword.trim().toLowerCase();
+    const filtered = catalogs.filter((catalog) => {
+      const matchesKeyword = normalizedKeyword
+        ? catalog.name.toLowerCase().includes(normalizedKeyword)
+        : true;
+      const matchesStatus = statusFilter === "ALL" ? true : catalog.status === statusFilter;
+      return matchesKeyword && matchesStatus;
+    });
+
+    if (!sortKey) {
+      return filtered;
+    }
+
+    return [...filtered].sort((a, b) => {
+      let comparison: number;
+
+      if (sortKey === "name") {
+        comparison = a.name.localeCompare(b.name);
+      } else if (sortKey === "basePrice") {
+        comparison = a.basePrice - b.basePrice;
+      } else {
+        comparison = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+      }
+
+      return sortDir === "asc" ? comparison : -comparison;
+    });
+  }, [catalogs, keyword, statusFilter, sortKey, sortDir]);
+
+  const hasActiveFilters = Boolean(keyword) || statusFilter !== "ALL";
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir((direction) => (direction === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  };
+
+  const clearFilters = () => {
+    setKeyword("");
+    setStatusFilter("ALL");
+  };
+
+  const renderSortIcon = (key: SortKey) => {
+    if (sortKey !== key) {
+      return <ArrowUpDown size={13} className="text-primary-300" />;
+    }
+
+    return sortDir === "asc" ? <ArrowUp size={13} /> : <ArrowDown size={13} />;
+  };
 
   const resetForm = () => {
     setName("");
@@ -82,7 +149,10 @@ export default function CatalogManagementPage() {
             </p>
           </div>
           <div className="rounded-2xl border border-primary-100 bg-white px-4 py-3 text-sm text-primary-500 shadow-soft">
-            <span className="font-semibold text-primary-950">{catalogs.length}</span> catalogs loaded
+            <span className="font-semibold text-primary-950">
+              {hasActiveFilters ? visibleCatalogs.length : catalogs.length}
+            </span>{" "}
+            {hasActiveFilters ? `of ${catalogs.length} catalogs shown` : "catalogs loaded"}
           </div>
         </div>
 
@@ -145,6 +215,46 @@ export default function CatalogManagementPage() {
                 <Boxes className="text-accent-500" size={22} />
               </div>
 
+              <div className="flex flex-col gap-3 border-b border-primary-100 px-6 py-4 sm:flex-row sm:items-center">
+                <div className="relative flex-1">
+                  <Search
+                    size={16}
+                    className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-primary-300"
+                  />
+                  <input
+                    type="text"
+                    value={keyword}
+                    onChange={(event) => setKeyword(event.target.value)}
+                    placeholder="Search by name..."
+                    aria-label="Search catalogs by name"
+                    className="h-11 w-full rounded-xl border border-primary-200 bg-white pl-10 pr-3.5 text-sm text-primary-900 outline-none transition placeholder:text-primary-300 focus:border-accent-400 focus:ring-2 focus:ring-accent-100"
+                  />
+                </div>
+                <Select
+                  aria-label="Filter by status"
+                  value={statusFilter}
+                  onChange={(event) => setStatusFilter(event.target.value)}
+                  className="sm:w-48"
+                >
+                  <option value="ALL">All statuses</option>
+                  {statusOptions.map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                </Select>
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-primary-200 px-4 py-2 text-xs font-semibold text-primary-600 transition hover:border-primary-900 hover:text-primary-900"
+                  >
+                    <X size={13} />
+                    Clear filters
+                  </button>
+                )}
+              </div>
+
               {catalogsQuery.isLoading && <Loading label="Loading catalogs..." />}
               {catalogsQuery.isError && (
                 <div className="p-6">
@@ -156,21 +266,50 @@ export default function CatalogManagementPage() {
                   <EmptyState title="No catalogs yet" description="Create the first catalog using the form on the left." />
                 </div>
               )}
+              {!catalogsQuery.isLoading && !catalogsQuery.isError && catalogs.length > 0 && visibleCatalogs.length === 0 && (
+                <div className="p-6">
+                  <EmptyState title="No catalogs match your filters" description="Try a different keyword or status, or clear filters." />
+                </div>
+              )}
 
-              {catalogs.length > 0 && (
+              {visibleCatalogs.length > 0 && (
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[760px] text-left text-sm">
                     <thead className="bg-beige-50 text-xs uppercase tracking-wider text-primary-400">
                       <tr>
-                        <th className="px-5 py-4">Name</th>
-                        <th className="px-5 py-4">Base price</th>
+                        <th className="px-5 py-4">
+                          <button
+                            type="button"
+                            onClick={() => toggleSort("name")}
+                            className="inline-flex items-center gap-1.5 transition hover:text-primary-900"
+                          >
+                            Name {renderSortIcon("name")}
+                          </button>
+                        </th>
+                        <th className="px-5 py-4">
+                          <button
+                            type="button"
+                            onClick={() => toggleSort("basePrice")}
+                            className="inline-flex items-center gap-1.5 transition hover:text-primary-900"
+                          >
+                            Base price {renderSortIcon("basePrice")}
+                          </button>
+                        </th>
                         <th className="px-5 py-4">Status</th>
-                        <th className="px-5 py-4">Updated</th>
+                        <th className="px-5 py-4">
+                          <button
+                            type="button"
+                            onClick={() => toggleSort("updatedAt")}
+                            className="inline-flex items-center gap-1.5 transition hover:text-primary-900"
+                          >
+                            Updated {renderSortIcon("updatedAt")}
+                          </button>
+                        </th>
                         <th className="px-5 py-4">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-primary-100">
-                      {catalogs.map((catalog) => (
+                      {visibleCatalogs.map((catalog) => (
                         <tr key={catalog.id} className={selectedId === catalog.id ? "bg-accent-50/60" : ""}>
                           <td className="px-5 py-4">
                             <p className="font-semibold text-primary-950">{catalog.name}</p>
