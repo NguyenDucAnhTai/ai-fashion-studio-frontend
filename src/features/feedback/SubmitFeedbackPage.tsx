@@ -1,5 +1,4 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Star } from "lucide-react";
 import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
@@ -9,6 +8,7 @@ import Container from "../../shared/components/Container";
 import ErrorState from "../../shared/components/ErrorState";
 import Input from "../../shared/components/Input";
 import Loading from "../../shared/components/Loading";
+import RatingInput from "../../shared/components/RatingInput";
 import Textarea from "../../shared/components/Textarea";
 import { ORDER_STATUS } from "../../shared/constants/orderStatus";
 import { useOrderDetailQuery } from "../order/api";
@@ -61,9 +61,9 @@ export default function SubmitFeedbackPage() {
               comment: values.comment ?? "",
               createdAt: new Date().toISOString(),
             });
-          }
 
-          navigate(`/orders/${order.id}`);
+            navigate(`/orders/${order.id}`);
+          }
         },
       },
     );
@@ -106,22 +106,11 @@ export default function SubmitFeedbackPage() {
           <div className="mt-7 space-y-5">
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-primary-700">Rating</span>
-              <div className="flex gap-2">
-                {[1, 2, 3, 4, 5].map((value) => (
-                  <button
-                    key={value}
-                    type="button"
-                    disabled={!canSubmit}
-                    onClick={() => setValue("rating", value, { shouldValidate: true })}
-                    className={[
-                      "flex h-11 w-11 items-center justify-center rounded-full border transition",
-                      value <= rating ? "border-accent-300 bg-accent-100 text-accent-700" : "border-primary-100 text-primary-300",
-                    ].join(" ")}
-                  >
-                    <Star size={17} fill="currentColor" />
-                  </button>
-                ))}
-              </div>
+              <RatingInput
+                value={rating}
+                onChange={(value) => setValue("rating", value, { shouldValidate: true })}
+                disabled={!canSubmit}
+              />
               {errors.rating && <span className="mt-1.5 block text-xs text-error-700">{errors.rating.message}</span>}
             </label>
             <Textarea label="Comment" disabled={!canSubmit} error={errors.comment?.message} {...register("comment")} />

@@ -1,6 +1,7 @@
 ﻿import { ArrowRight, CheckCircle2, ShieldCheck } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import Badge from "../../shared/components/Badge";
 import Button from "../../shared/components/Button";
 import Container from "../../shared/components/Container";
 import ErrorState from "../../shared/components/ErrorState";
@@ -9,6 +10,7 @@ import { formatCurrency } from "../../shared/utils/formatCurrency";
 import { getApiErrorMessage } from "../../shared/api/httpClient";
 import { useCreateDraftDesignMutation, useProductDetailQuery } from "./api";
 import { findMockProduct } from "./mockData";
+import { getProductStatusTone } from "./statusTone";
 import ProductVisual from "./ProductVisual";
 
 export default function ProductDetailPage() {
@@ -103,9 +105,7 @@ export default function ProductDetailPage() {
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-primary-400">Price</p>
                 <p className="mt-1 text-2xl font-semibold text-primary-950">{formatCurrency(totalPrice)}</p>
               </div>
-              <span className="rounded-full bg-success-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-success-700">
-                {product.status}
-              </span>
+              <Badge tone={getProductStatusTone(product.status)}>{product.status}</Badge>
             </div>
 
             <div className="mt-6">

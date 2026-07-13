@@ -41,16 +41,16 @@ export default function FeedbackModerationPage() {
     mutation.mutate(
       { status, note: values.note || undefined },
       {
-        onSuccess: () => {
-          removePendingFeedbackDraft(values.feedbackId);
-          setPendingDrafts(getPendingFeedbackDrafts());
-          reset({ feedbackId: "", note: "" });
+        onSuccess: (response) => {
+          if (response.data) {
+            removePendingFeedbackDraft(values.feedbackId);
+            setPendingDrafts(getPendingFeedbackDrafts());
+            reset({ feedbackId: "", note: "" });
+          }
         },
       },
     );
   };
-
-  const onSubmit = (values: ModerateFeedbackFormValues) => handleModerate("APPROVED", values);
 
   return (
     <section className="min-h-screen bg-beige-50 pt-28 pb-20 lg:pt-32">
@@ -86,7 +86,7 @@ export default function FeedbackModerationPage() {
             </div>
           </div>
 
-          <form className="rounded-3xl border border-primary-100 bg-white p-6 shadow-soft" onSubmit={handleSubmit(onSubmit)} noValidate>
+          <form className="rounded-3xl border border-primary-100 bg-white p-6 shadow-soft" onSubmit={(event) => event.preventDefault()} noValidate>
             <Input label="Feedback ID" error={errors.feedbackId?.message} {...register("feedbackId")} />
             <Textarea label="Moderation note" error={errors.note?.message} className="mt-4" {...register("note")} />
 

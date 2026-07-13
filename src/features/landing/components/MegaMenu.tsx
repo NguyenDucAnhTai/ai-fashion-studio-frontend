@@ -1,4 +1,5 @@
 import { ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import type { NavDropdownItem } from "../../../shared/types";
 
 interface MegaMenuProps {
@@ -21,9 +22,9 @@ export default function MegaMenu({ items, isVisible }: MegaMenuProps) {
       <div className="p-6">
         <div className="grid grid-cols-2 gap-3">
           {items.map((item) => (
-            <a
+            <Link
               key={item.href}
-              href={item.href}
+              to={item.href}
               className="group flex items-start gap-3 p-3 rounded-xl hover:bg-beige-50 transition-colors duration-150"
             >
               <div
@@ -48,7 +49,7 @@ export default function MegaMenu({ items, isVisible }: MegaMenuProps) {
                   {item.description}
                 </p>
               </div>
-            </a>
+            </Link>
           ))}
         </div>
 

@@ -1,6 +1,8 @@
 ﻿import { ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import Badge from "../../shared/components/Badge";
 import { formatCurrency } from "../../shared/utils/formatCurrency";
+import { getProductStatusTone } from "./statusTone";
 import type { ProductSummary } from "./types";
 import ProductVisual from "./ProductVisual";
 
@@ -32,9 +34,7 @@ export default function ProductCard({ product, index }: ProductCardProps) {
         </div>
         <div className="flex items-center justify-between border-t border-primary-100 pt-4">
           <p className="text-sm font-semibold text-primary-900">{formatCurrency(product.basePrice)}</p>
-          <span className="rounded-full bg-success-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-success-700">
-            {product.status}
-          </span>
+          <Badge tone={getProductStatusTone(product.status)}>{product.status}</Badge>
         </div>
       </div>
     </Link>

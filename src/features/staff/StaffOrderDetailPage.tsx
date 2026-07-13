@@ -2,14 +2,14 @@ import { FileText } from "lucide-react";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getApiErrorMessage } from "../../shared/api/httpClient";
-import Badge from "../../shared/components/Badge";
 import Button from "../../shared/components/Button";
 import Container from "../../shared/components/Container";
 import ErrorState from "../../shared/components/ErrorState";
 import Loading from "../../shared/components/Loading";
+import OrderStatusBadge from "../../shared/components/OrderStatusBadge";
+import PaymentStatusBadge from "../../shared/components/PaymentStatusBadge";
 import Textarea from "../../shared/components/Textarea";
-import { getNextOrderStatus, getOrderStatusTone } from "../../shared/constants/orderStatus";
-import { getPaymentStatusTone } from "../../shared/constants/paymentStatus";
+import { getNextOrderStatus } from "../../shared/constants/orderStatus";
 import { formatCurrency } from "../../shared/utils/formatCurrency";
 import { useOrderDetailQuery, useUpdateOrderStatusMutation } from "../order/api";
 
@@ -63,8 +63,8 @@ export default function StaffOrderDetailPage() {
             <p className="text-sm font-semibold text-accent-600">Staff detail</p>
             <h1 className="mt-3 font-display text-4xl font-semibold text-primary-950">{order.orderCode}</h1>
             <div className="mt-4 flex flex-wrap gap-3">
-              <Badge tone={getPaymentStatusTone(order.paymentStatus)}>{order.paymentStatus}</Badge>
-              <Badge tone={getOrderStatusTone(order.orderStatus)}>{order.orderStatus}</Badge>
+              <PaymentStatusBadge status={order.paymentStatus} />
+              <OrderStatusBadge status={order.orderStatus} />
             </div>
           </div>
           <Link to={`/staff/orders/${order.id}/print-info`}>

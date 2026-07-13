@@ -13,6 +13,7 @@ import { useAuthStore } from "../../auth/authStore";
 import { getRoleRedirect, getUserRoles } from "../../auth/roleRedirect";
 import Logo from "../../../shared/components/Logo";
 import { NAV_ITEMS } from "../../../shared/constants/navItems";
+import { ROLES } from "../../../shared/constants/roles";
 import MegaMenu from "./MegaMenu";
 
 export default function Navbar() {
@@ -27,7 +28,17 @@ export default function Navbar() {
   const menuTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 24);
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(() => {
+        setScrolled(window.scrollY > 24);
+        ticking = false;
+      });
+    };
+
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -55,6 +66,8 @@ export default function Navbar() {
   const userRoles = getUserRoles(currentUser);
   const dashboardHref = currentUser ? getRoleRedirect(userRoles) : "/";
   const accountLabel = currentUser?.fullName ?? currentUser?.email ?? "Account";
+  const isStaffOrAdmin = userRoles.includes(ROLES.staff) || userRoles.includes(ROLES.admin);
+  const shoppingBagHref = currentUser && isStaffOrAdmin ? dashboardHref : "/products";
 
   return (
     <>
@@ -151,7 +164,7 @@ export default function Navbar() {
               </div>
 
               <Link
-                to={currentUser ? dashboardHref : "/products"}
+                to={shoppingBagHref}
                 aria-label="Product catalog"
                 className="relative flex h-10 w-10 items-center justify-center text-[#1f2937] transition-colors hover:text-black"
               >

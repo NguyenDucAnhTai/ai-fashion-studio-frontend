@@ -1,14 +1,15 @@
 import { Search } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
-import Badge from "../../shared/components/Badge";
 import Button from "../../shared/components/Button";
 import Container from "../../shared/components/Container";
+import EmptyState from "../../shared/components/EmptyState";
 import ErrorState from "../../shared/components/ErrorState";
 import Input from "../../shared/components/Input";
 import Loading from "../../shared/components/Loading";
+import OrderStatusBadge from "../../shared/components/OrderStatusBadge";
 import Select from "../../shared/components/Select";
-import { ORDER_STATUS, getOrderStatusTone, type OrderStatus } from "../../shared/constants/orderStatus";
+import { ORDER_STATUS, type OrderStatus } from "../../shared/constants/orderStatus";
 import { formatCurrency } from "../../shared/utils/formatCurrency";
 import { useStaffOrdersQuery } from "./api";
 
@@ -51,7 +52,10 @@ export default function StaffOrderListPage() {
 
         {ordersQuery.isLoading && <Loading label="Loading staff orders..." />}
         {ordersQuery.isError && <ErrorState description="Could not load staff order list." />}
-        {data && (
+        {data && data.items.length === 0 && (
+          <EmptyState title="No orders found" description="Try a different status or search keyword." />
+        )}
+        {data && data.items.length > 0 && (
           <div className="overflow-hidden rounded-3xl border border-primary-100 bg-white shadow-soft">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[720px] text-left text-sm">
@@ -71,7 +75,7 @@ export default function StaffOrderListPage() {
                       <td className="px-5 py-4 text-primary-500">{order.customerId.slice(0, 8)}</td>
                       <td className="px-5 py-4 text-primary-700">{formatCurrency(order.totalAmount)}</td>
                       <td className="px-5 py-4">
-                        <Badge tone={getOrderStatusTone(order.orderStatus)}>{order.orderStatus}</Badge>
+                        <OrderStatusBadge status={order.orderStatus} />
                       </td>
                       <td className="px-5 py-4">
                         <Link to={`/staff/orders/${order.orderId}`} className="font-semibold text-primary-950 underline underline-offset-4">

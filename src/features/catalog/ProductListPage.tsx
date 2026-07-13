@@ -3,7 +3,6 @@ import { useMemo, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import Container from "../../shared/components/Container";
 import EmptyState from "../../shared/components/EmptyState";
-import ErrorState from "../../shared/components/ErrorState";
 import Input from "../../shared/components/Input";
 import Loading from "../../shared/components/Loading";
 import { MOCK_PRODUCTS } from "./mockData";
@@ -121,10 +120,6 @@ export default function ProductListPage() {
               </div>
             </div>
           </>
-        )}
-
-        {productsQuery.isError && !data && (
-          <ErrorState title="Cannot load products" description="Please check the API gateway and try again." onRetry={() => productsQuery.refetch()} />
         )}
       </Container>
     </section>
