@@ -34,3 +34,12 @@ export interface PaymentInfo {
   paidAt?: string | null;
   expiresAt?: string | null;
 }
+
+export type CreatePaymentResponse = PaymentInfo;
+
+export type PaymentByOrderResponse = PaymentInfo;
+
+export interface InvoiceResponse {
+  invoiceNumber: string;
+  invoicePdfUrl: string;
+}

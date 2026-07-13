@@ -11,7 +11,8 @@ import Loading from "../../shared/components/Loading";
 import RatingInput from "../../shared/components/RatingInput";
 import Textarea from "../../shared/components/Textarea";
 import { ORDER_STATUS } from "../../shared/constants/orderStatus";
-import { useOrderDetailQuery } from "../order/api";
+import { useAuthStore } from "../auth/authStore";
+import { MISSING_CUSTOMER_MESSAGE, useOrderDetailQuery } from "../order/api";
 import { useSubmitFeedbackMutation } from "./api";
 import { addPendingFeedbackDraft } from "./pendingFeedbacks";
 import { submitFeedbackSchema, type SubmitFeedbackFormValues } from "./schemas";
@@ -19,7 +20,8 @@ import { submitFeedbackSchema, type SubmitFeedbackFormValues } from "./schemas";
 export default function SubmitFeedbackPage() {
   const { orderId = "" } = useParams();
   const navigate = useNavigate();
-  const orderQuery = useOrderDetailQuery(orderId);
+  const userId = useAuthStore((state) => state.currentUser?.id ?? "");
+  const orderQuery = useOrderDetailQuery(userId ? orderId : "", userId);
   const submitFeedback = useSubmitFeedbackMutation();
   const order = orderQuery.data?.data;
   const firstItem = order?.items[0];
@@ -68,6 +70,19 @@ export default function SubmitFeedbackPage() {
       },
     );
   };
+
+  if (!userId) {
+    return (
+      <section className="min-h-screen bg-beige-50 pt-28 pb-20">
+        <Container>
+          <ErrorState
+            title="Cannot load order"
+            description={MISSING_CUSTOMER_MESSAGE}
+          />
+        </Container>
+      </section>
+    );
+  }
 
   if (orderQuery.isLoading) {
     return (

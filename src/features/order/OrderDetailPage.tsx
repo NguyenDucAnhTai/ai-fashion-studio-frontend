@@ -1,4 +1,10 @@
-import { Download, MessageSquare, WalletCards } from "lucide-react";
+import {
+  CreditCard,
+  Download,
+  MessageSquare,
+  ReceiptText,
+  WalletCards,
+} from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import Badge from "../../shared/components/Badge";
 import Button from "../../shared/components/Button";
@@ -6,18 +12,61 @@ import Container from "../../shared/components/Container";
 import ErrorState from "../../shared/components/ErrorState";
 import Loading from "../../shared/components/Loading";
 import { ORDER_STATUS, getOrderStatusTone } from "../../shared/constants/orderStatus";
-import { getPaymentStatusTone } from "../../shared/constants/paymentStatus";
+import { PAYMENT_STATUS, getPaymentStatusTone } from "../../shared/constants/paymentStatus";
 import { formatCurrency } from "../../shared/utils/formatCurrency";
 import { formatDate } from "../../shared/utils/formatDate";
-import { usePaymentByOrderQuery } from "../payment/api";
-import { useOrderDetailQuery } from "./api";
+import { useAuthStore } from "../auth/authStore";
+import {
+  getPaymentErrorMessage,
+  useInvoiceMutation,
+  usePaymentByOrderQuery,
+} from "../payment/api";
+import { MISSING_CUSTOMER_MESSAGE, useOrderDetailQuery } from "./api";
 
 export default function OrderDetailPage() {
   const { orderId = "" } = useParams();
-  const orderQuery = useOrderDetailQuery(orderId);
-  const paymentQuery = usePaymentByOrderQuery(orderId, Boolean(orderId), false);
+  const userId = useAuthStore((state) => state.currentUser?.id ?? "");
+  const orderQuery = useOrderDetailQuery(userId ? orderId : "", userId);
+  const paymentQuery = usePaymentByOrderQuery(orderId, Boolean(orderId && userId), false);
+  const invoiceMutation = useInvoiceMutation();
   const order = orderQuery.data?.data;
   const payment = paymentQuery.data?.data;
+  const isPaid =
+    order?.paymentStatus === PAYMENT_STATUS.paid ||
+    payment?.paymentStatus === PAYMENT_STATUS.paid;
+  const canPay =
+    Boolean(order) &&
+    !isPaid &&
+    (order?.orderStatus === ORDER_STATUS.pendingPayment ||
+      order?.paymentStatus === PAYMENT_STATUS.pending ||
+      payment?.paymentStatus === PAYMENT_STATUS.pending);
+
+  const handleDownloadInvoice = () => {
+    if (!payment?.paymentId) {
+      return;
+    }
+
+    invoiceMutation.mutate(payment.paymentId, {
+      onSuccess: (response) => {
+        if (response.data?.invoicePdfUrl) {
+          window.open(response.data.invoicePdfUrl, "_blank", "noopener,noreferrer");
+        }
+      },
+    });
+  };
+
+  if (!userId) {
+    return (
+      <section className="min-h-screen bg-beige-50 pt-28 pb-20">
+        <Container>
+          <ErrorState
+            title="Cannot load order"
+            description={MISSING_CUSTOMER_MESSAGE}
+          />
+        </Container>
+      </section>
+    );
+  }
 
   if (orderQuery.isLoading) {
     return (
@@ -49,17 +98,27 @@ export default function OrderDetailPage() {
               <Badge tone={getOrderStatusTone(order.orderStatus)}>{order.orderStatus}</Badge>
             </div>
           </div>
-          {order.orderStatus === ORDER_STATUS.completed && (
-            <Link to={`/orders/${order.id}/feedback`}>
-              <Button type="button">
-                <MessageSquare size={16} />
-                Submit feedback
-              </Button>
-            </Link>
-          )}
+          <div className="flex flex-wrap gap-3">
+            {canPay && (
+              <Link to={`/payment/${order.id}`}>
+                <Button type="button">
+                  <CreditCard size={16} />
+                  Thanh toán đơn hàng
+                </Button>
+              </Link>
+            )}
+            {order.orderStatus === ORDER_STATUS.completed && (
+              <Link to={`/orders/${order.id}/feedback`}>
+                <Button type="button" variant="outline">
+                  <MessageSquare size={16} />
+                  Submit feedback
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
           <div className="space-y-6">
             <section className="rounded-3xl border border-primary-100 bg-white p-6 shadow-soft">
               <h2 className="text-lg font-semibold text-primary-950">Order items</h2>
@@ -122,24 +181,84 @@ export default function OrderDetailPage() {
             <section className="rounded-3xl border border-primary-100 bg-white p-6 shadow-soft">
               <h2 className="text-lg font-semibold text-primary-950">Payment</h2>
               <p className="mt-2 text-3xl font-semibold text-primary-950">{formatCurrency(order.totalAmount)}</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Badge tone={getPaymentStatusTone(payment?.paymentStatus ?? order.paymentStatus)}>
+                  {payment?.paymentStatus ?? order.paymentStatus}
+                </Badge>
+              </div>
+
               {payment && (
-                <div className="mt-4 space-y-3">
-                  <Badge tone={getPaymentStatusTone(payment.paymentStatus)}>{payment.paymentStatus}</Badge>
-                  {payment.invoicePdfUrl && (
-                    <a href={payment.invoicePdfUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm font-semibold text-primary-900">
-                      <Download size={16} />
-                      Download invoice
-                    </a>
+                <dl className="mt-5 space-y-3 text-sm">
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-primary-400">Provider</dt>
+                    <dd className="font-semibold text-primary-900">
+                      {payment.provider ?? payment.paymentMethod ?? "-"}
+                    </dd>
+                  </div>
+                  {payment.paymentContent && (
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-primary-400">Content</dt>
+                      <dd className="text-right font-semibold text-primary-900">{payment.paymentContent}</dd>
+                    </div>
                   )}
-                </div>
+                  {payment.paidAt && (
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-primary-400">Paid at</dt>
+                      <dd className="text-right font-semibold text-primary-900">{formatDate(payment.paidAt)}</dd>
+                    </div>
+                  )}
+                </dl>
               )}
-              {!payment && !paymentQuery.isLoading && (
-                <Link to={`/payment/${order.id}`} className="mt-5 inline-flex">
-                  <Button type="button" variant="outline">
+
+              {canPay && (
+                <Link to={`/payment/${order.id}`} className="mt-5 inline-flex w-full">
+                  <Button type="button" className="w-full">
                     <WalletCards size={16} />
-                    Open payment
+                    Thanh toán đơn hàng
                   </Button>
                 </Link>
+              )}
+
+              {isPaid && payment?.paymentId && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="mt-5 w-full"
+                  loading={invoiceMutation.isPending}
+                  onClick={handleDownloadInvoice}
+                >
+                  <Download size={16} />
+                  Download invoice
+                </Button>
+              )}
+
+              {paymentQuery.isError && !payment && !canPay && (
+                <p className="mt-4 rounded-2xl bg-warning-50 px-4 py-3 text-sm text-warning-700">
+                  Payment information is not available yet.
+                </p>
+              )}
+
+              {invoiceMutation.isError && (
+                <p className="mt-4 rounded-2xl bg-error-50 px-4 py-3 text-sm text-error-700">
+                  {getPaymentErrorMessage(invoiceMutation.error)}
+                </p>
+              )}
+
+              {invoiceMutation.data?.data && (
+                <div className="mt-4 rounded-2xl bg-success-50 px-4 py-3 text-sm text-success-700">
+                  <div className="flex items-center gap-2 font-semibold">
+                    <ReceiptText size={16} />
+                    {invoiceMutation.data.data.invoiceNumber || "Invoice"}
+                  </div>
+                  <a
+                    href={invoiceMutation.data.data.invoicePdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-flex font-semibold underline"
+                  >
+                    Open invoice PDF
+                  </a>
+                </div>
               )}
             </section>
           </aside>

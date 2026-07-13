@@ -1,6 +1,6 @@
-import { Eye } from "lucide-react";
+import { CreditCard, Eye } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import Badge from "../../shared/components/Badge";
 import Button from "../../shared/components/Button";
 import Container from "../../shared/components/Container";
@@ -8,15 +8,28 @@ import EmptyState from "../../shared/components/EmptyState";
 import ErrorState from "../../shared/components/ErrorState";
 import Loading from "../../shared/components/Loading";
 import { getOrderStatusTone } from "../../shared/constants/orderStatus";
-import { getPaymentStatusTone } from "../../shared/constants/paymentStatus";
+import { PAYMENT_STATUS, getPaymentStatusTone } from "../../shared/constants/paymentStatus";
 import { formatCurrency } from "../../shared/utils/formatCurrency";
 import { formatDate } from "../../shared/utils/formatDate";
-import { useMyOrdersQuery } from "./api";
+import { useAuthStore } from "../auth/authStore";
+import {
+  MISSING_CUSTOMER_MESSAGE,
+  getOrderErrorMessage,
+  useMyOrdersQuery,
+} from "./api";
+
+interface MyOrdersLocationState {
+  createdOrderId?: string;
+  message?: string;
+}
 
 export default function MyOrdersPage() {
   const [page, setPage] = useState(1);
   const pageSize = 10;
-  const ordersQuery = useMyOrdersQuery({ page, pageSize });
+  const location = useLocation();
+  const routeState = (location.state ?? null) as MyOrdersLocationState | null;
+  const userId = useAuthStore((state) => state.currentUser?.id ?? "");
+  const ordersQuery = useMyOrdersQuery({ page, pageSize }, userId);
   const data = ordersQuery.data?.data;
 
   return (
@@ -27,18 +40,48 @@ export default function MyOrdersPage() {
           <h1 className="mt-3 font-display text-4xl font-semibold text-primary-950">My orders</h1>
         </div>
 
-        {ordersQuery.isLoading && <Loading label="Loading orders..." />}
-        {ordersQuery.isError && <ErrorState description="Could not load your orders." />}
-        {data && data.items.length === 0 && <EmptyState title="No orders yet" description="Saved designs can be checked out into orders." />}
+        {routeState?.message && (
+          <div className="mb-6 rounded-2xl border border-success-500/20 bg-success-50 px-4 py-3 text-sm font-semibold text-success-700">
+            {routeState.message}
+          </div>
+        )}
 
-        {data && data.items.length > 0 && (
+        {!userId && (
+          <ErrorState
+            title="Cannot load orders"
+            description={MISSING_CUSTOMER_MESSAGE}
+          />
+        )}
+        {userId && ordersQuery.isLoading && <Loading label="Loading orders..." />}
+        {userId && ordersQuery.isError && (
+          <ErrorState
+            title="Could not load your orders"
+            description={getOrderErrorMessage(ordersQuery.error)}
+            onRetry={() => ordersQuery.refetch()}
+          />
+        )}
+        {userId && data && data.items.length === 0 && <EmptyState title="No orders yet" description="Saved designs can be checked out into orders." />}
+
+        {userId && data && data.items.length > 0 && (
           <>
             <div className="space-y-4">
               {data.items.map((order) => {
                 const id = order.id ?? order.orderId ?? "";
+                const canPay =
+                  id &&
+                  (order.paymentStatus === PAYMENT_STATUS.pending ||
+                    order.orderStatus === "PENDING_PAYMENT");
 
                 return (
-                  <article key={id || order.orderCode} className="flex flex-col gap-4 rounded-3xl border border-primary-100 bg-white p-5 shadow-soft lg:flex-row lg:items-center lg:justify-between">
+                  <article
+                    key={id || order.orderCode}
+                    className={[
+                      "flex flex-col gap-4 rounded-3xl border bg-white p-5 shadow-soft lg:flex-row lg:items-center lg:justify-between",
+                      routeState?.createdOrderId === id
+                        ? "border-success-500/40"
+                        : "border-primary-100",
+                    ].join(" ")}
+                  >
                     <div>
                       <h2 className="text-lg font-semibold text-primary-950">{order.orderCode}</h2>
                       {order.createdAt && <p className="mt-1 text-xs text-primary-400">{formatDate(order.createdAt)}</p>}
@@ -51,6 +94,12 @@ export default function MyOrdersPage() {
                         <Link to={`/orders/${id}`} className="inline-flex items-center gap-2 rounded-full border border-primary-200 px-4 py-2 text-sm font-semibold text-primary-800 transition hover:border-primary-900">
                           <Eye size={15} />
                           Detail
+                        </Link>
+                      )}
+                      {canPay && (
+                        <Link to={`/payment/${id}`} className="inline-flex items-center gap-2 rounded-full bg-primary-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-700">
+                          <CreditCard size={15} />
+                          Thanh toán
                         </Link>
                       )}
                     </div>

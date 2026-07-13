@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LockKeyhole } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { getApiErrorMessage } from "../../shared/api/httpClient";
 import Button from "../../shared/components/Button";
 import Container from "../../shared/components/Container";
@@ -11,8 +11,11 @@ import { resetPasswordSchema, type ResetPasswordFormValues } from "./schemas";
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const resetPasswordMutation = useResetPasswordMutation();
+  const stateResetToken =
+    (location.state as { resetToken?: string } | null)?.resetToken;
   const {
     register,
     handleSubmit,
@@ -22,7 +25,8 @@ export default function ResetPasswordPage() {
     mode: "onChange",
     defaultValues: {
       email: searchParams.get("email") ?? "",
-      otp: searchParams.get("otp") ?? "",
+      resetToken:
+        stateResetToken ?? searchParams.get("resetToken") ?? searchParams.get("otp") ?? "",
       newPassword: "",
     },
   });
@@ -31,7 +35,7 @@ export default function ResetPasswordPage() {
     resetPasswordMutation.mutate(
       {
         email: values.email.trim(),
-        otp: values.otp.trim(),
+        resetToken: values.resetToken.trim(),
         newPassword: values.newPassword,
       },
       {
@@ -59,7 +63,12 @@ export default function ResetPasswordPage() {
               error={errors.email?.message}
               {...register("email")}
             />
-            <Input label="OTP" error={errors.otp?.message} {...register("otp")} />
+            <input type="hidden" {...register("resetToken")} />
+            {errors.resetToken && (
+              <p className="rounded-2xl bg-error-50 px-4 py-3 text-sm text-error-700">
+                Reset session expired. Please verify OTP again.
+              </p>
+            )}
             <Input
               label="New password"
               type="password"
