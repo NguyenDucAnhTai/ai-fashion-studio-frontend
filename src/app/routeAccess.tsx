@@ -27,6 +27,8 @@ import StaffOrderDetailPage from "../features/staff/StaffOrderDetailPage";
 import StaffOrderListPage from "../features/staff/StaffOrderListPage";
 import TryOnPage from "../features/tryon/TryOnPage";
 import TryOnResultPage from "../features/tryon/TryOnResultPage";
+import EditProfilePage from "../features/user/EditProfilePage";
+import ProfilePage from "../features/user/ProfilePage";
 import { ROLE_GROUPS } from "../shared/constants/roleGroups";
 import type { Role } from "../shared/constants/roles";
 
@@ -53,6 +55,8 @@ export const ROUTE_ACCESS: RouteAccessEntry[] = [
   { path: "forgot-password", element: <ForgotPasswordPage /> },
   { path: "verify-reset-otp", element: <VerifyResetOtpPage /> },
   { path: "reset-password", element: <ResetPasswordPage /> },
+  { path: "profile", element: <ProfilePage /> },
+  { path: "profile/edit", element: <EditProfilePage /> },
   {
     path: "designs/my",
     element: <MyDesignsPage />,

@@ -60,6 +60,6 @@ export interface VerifyResetOtpRequest {
 
 export interface ResetPasswordRequest {
   email: string;
-  otp: string;
+  resetToken: string;
   newPassword: string;
 }

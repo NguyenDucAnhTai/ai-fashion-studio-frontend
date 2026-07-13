@@ -29,7 +29,7 @@ export interface CreateOrderResponse {
   orderStatus: OrderStatus;
 }
 
-export interface OrderSummary {
+export interface MyOrderListItem {
   id?: string;
   orderId?: string;
   orderCode: string;
@@ -38,6 +38,16 @@ export interface OrderSummary {
   paymentStatus: PaymentStatus;
   orderStatus: OrderStatus;
   createdAt?: string;
+}
+
+export type OrderSummary = MyOrderListItem;
+
+export interface MyOrdersResponse {
+  items: MyOrderListItem[];
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
 }
 
 export interface OrderItem {

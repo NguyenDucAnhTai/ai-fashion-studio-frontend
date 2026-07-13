@@ -1,9 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CreditCard } from "lucide-react";
 import { useMemo } from "react";
-import { useForm } from "react-hook-form";
-import { useNavigate, useParams } from "react-router-dom";
-import { getApiErrorMessage } from "../../shared/api/httpClient";
+import { useForm, useWatch } from "react-hook-form";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Button from "../../shared/components/Button";
 import Container from "../../shared/components/Container";
 import ErrorState from "../../shared/components/ErrorState";
@@ -12,44 +11,65 @@ import Loading from "../../shared/components/Loading";
 import Textarea from "../../shared/components/Textarea";
 import { DESIGN_STATUS } from "../../shared/constants/designStatus";
 import { formatCurrency } from "../../shared/utils/formatCurrency";
+import { useAuthStore } from "../auth/authStore";
 import { useProductDetailQuery } from "../catalog/api";
 import DesignPreview from "../design/DesignPreview";
 import { useDesignDetailQuery } from "../design/api";
-import { useCreateOrderMutation } from "./api";
+import {
+  MISSING_CUSTOMER_MESSAGE,
+  getOrderErrorMessage,
+  useCreateOrderMutation,
+} from "./api";
 import {
   createCheckoutSchema,
   type CheckoutFormValues,
   type CheckoutInputValues,
 } from "./schemas";
 
+interface CheckoutLocationState {
+  productId?: string;
+  productVariantId?: string;
+}
+
 export default function CheckoutPage() {
   const { designId = "" } = useParams();
+  const location = useLocation();
+  const checkoutState = (location.state ?? null) as CheckoutLocationState | null;
   const navigate = useNavigate();
   const designQuery = useDesignDetailQuery(designId);
   const design = designQuery.data?.data;
-  const productQuery = useProductDetailQuery(design?.productId ?? "");
+  const userId = useAuthStore((state) => state.currentUser?.id ?? "");
+  const productId = design?.productId ?? checkoutState?.productId ?? "";
+  const productVariantId =
+    design?.productVariantId ?? checkoutState?.productVariantId ?? "";
+  const productQuery = useProductDetailQuery(productId);
   const product = productQuery.data?.data;
   const variant = useMemo(() => {
-    return product?.variants.find((item) => item.id === design?.productVariantId) ?? null;
-  }, [design?.productVariantId, product?.variants]);
-  const createOrder = useCreateOrderMutation();
+    return (
+      product?.variants.find((item) => item.id === productVariantId) ?? null
+    );
+  }, [productVariantId, product?.variants]);
+  const createOrder = useCreateOrderMutation(userId);
   const maxQuantity = Math.max(variant?.availableQuantity ?? 1, 1);
   const checkoutSchema = useMemo(() => createCheckoutSchema(maxQuantity), [maxQuantity]);
   const {
+    control,
     register,
     handleSubmit,
-    watch,
     formState: { errors },
   } = useForm<CheckoutInputValues, unknown, CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
     mode: "onBlur",
     defaultValues: { receiverName: "", receiverPhone: "", shippingAddress: "", quantity: 1 },
   });
-  const quantity = Number(watch("quantity") || 1);
+  const quantityValue = useWatch({ control, name: "quantity" });
+  const quantity = Number(quantityValue || 1);
   const totalAmount = product && variant ? (product.basePrice + variant.priceAdjustment) * quantity : 0;
+  const missingProductOrVariant = !productId || !productVariantId || (!variant && !productQuery.isLoading);
+  const designMustBeSaved = Boolean(design && design.status !== DESIGN_STATUS.saved);
 
   const onSubmit = (values: CheckoutFormValues) => {
-    if (!design || !product || !variant) {
+    if (!designId || !product || !variant || !userId) {
       return;
     }
 
@@ -59,7 +79,7 @@ export default function CheckoutPage() {
           {
             productId: product.id,
             productVariantId: variant.id,
-            designId: design.id,
+            designId,
             quantity: values.quantity,
           },
         ],
@@ -70,7 +90,13 @@ export default function CheckoutPage() {
       {
         onSuccess: (response) => {
           if (response.data?.orderId) {
-            navigate(`/payment/${response.data.orderId}`);
+            navigate("/orders/my", {
+              state: {
+                createdOrderId: response.data.orderId,
+                message:
+                  "Order created successfully. Please select the order to continue payment.",
+              },
+            });
           }
         },
       },
@@ -85,11 +111,14 @@ export default function CheckoutPage() {
     );
   }
 
-  if (!design || !product || !variant) {
+  if (missingProductOrVariant || !product || !variant) {
     return (
       <section className="min-h-screen bg-beige-50 pt-28 pb-20">
         <Container>
-          <ErrorState title="Checkout unavailable" description="The saved design, product, or selected variant could not be loaded." />
+          <ErrorState
+            title="Checkout unavailable"
+            description="Missing product or variant for checkout."
+          />
         </Container>
       </section>
     );
@@ -106,15 +135,25 @@ export default function CheckoutPage() {
           </p>
         </div>
 
-        {design.status !== DESIGN_STATUS.saved && (
+        {designMustBeSaved && (
           <div className="mb-6 rounded-2xl border border-warning-500/20 bg-warning-50 px-4 py-3 text-sm text-warning-700">
             Only SAVED designs can be checked out. Return to the editor and save this design first.
           </div>
         )}
 
+        {!userId && (
+          <div className="mb-6 rounded-2xl border border-error-500/20 bg-error-50 px-4 py-3 text-sm text-error-700">
+            {MISSING_CUSTOMER_MESSAGE}
+          </div>
+        )}
+
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_430px]">
           <div className="rounded-3xl border border-primary-100 bg-white p-5 shadow-soft">
-            <DesignPreview imageUrl={design.previewImageUrl} name={design.name} className="min-h-[440px]" />
+            <DesignPreview
+              imageUrl={design?.previewImageUrl}
+              name={design?.name ?? "Saved design"}
+              className="min-h-[440px]"
+            />
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
               <div className="rounded-2xl bg-beige-50 p-4">
                 <p className="text-xs text-primary-400">Product</p>
@@ -160,7 +199,7 @@ export default function CheckoutPage() {
 
             {createOrder.isError && (
               <p className="mt-4 rounded-2xl bg-error-50 px-4 py-3 text-sm text-error-700">
-                {getApiErrorMessage(createOrder.error)}
+                {getOrderErrorMessage(createOrder.error)}
               </p>
             )}
 
@@ -168,11 +207,11 @@ export default function CheckoutPage() {
               type="submit"
               size="lg"
               className="mt-6 w-full"
-              disabled={design.status !== DESIGN_STATUS.saved}
+              disabled={designMustBeSaved || missingProductOrVariant || !userId}
               loading={createOrder.isPending}
             >
               <CreditCard size={17} />
-              Create order
+              {createOrder.isPending ? "Creating order..." : "Mua hàng"}
             </Button>
           </form>
         </div>

@@ -1,6 +1,19 @@
-import type { DesignStatus } from "../../shared/constants/designStatus";
+import type { DesignStatus as SharedDesignStatus } from "../../shared/constants/designStatus";
 
-export type DesignLayerType = "TEXT" | "IMAGE" | "SHAPE" | string;
+export type DesignStatus = SharedDesignStatus;
+
+export type DesignLayerType = "TEXT" | "IMAGE" | string;
+
+export interface CreateDraftDesignRequest {
+  productId: string;
+  productVariantId: string;
+  name: string;
+}
+
+export interface CreateDraftDesignResponse {
+  designId: string;
+  status: DesignStatus;
+}
 
 export interface DesignLayer {
   layerType: DesignLayerType;
@@ -15,7 +28,7 @@ export interface DesignLayer {
   zIndex: number;
 }
 
-export interface DesignSummary {
+export interface MyDesignListItem {
   id: string;
   name: string;
   productId: string;
@@ -25,16 +38,32 @@ export interface DesignSummary {
   createdAt: string;
 }
 
-export interface DesignDetail extends DesignSummary {
-  customerId: string;
-  canvasJson?: Record<string, unknown> | null;
+export type DesignSummary = MyDesignListItem;
+
+export interface MyDesignsResponse {
+  items: MyDesignListItem[];
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+}
+
+export interface DesignDetail {
+  id: string;
+  customerId?: string;
+  productId: string;
+  productVariantId: string;
+  name: string;
+  canvasJson: unknown;
+  previewImageUrl?: string | null;
   printFileUrl?: string | null;
+  status: DesignStatus;
   layers: DesignLayer[];
 }
 
 export interface SaveDesignRequest {
   name: string;
-  canvasJson: Record<string, unknown>;
+  canvasJson: unknown;
   previewImageUrl: string;
   printFileUrl: string;
   layers: DesignLayer[];
@@ -43,6 +72,6 @@ export interface SaveDesignRequest {
 export interface SaveDesignResponse {
   designId: string;
   status: DesignStatus;
-  previewImageUrl: string;
-  printFileUrl: string;
+  previewImageUrl?: string | null;
+  printFileUrl?: string | null;
 }

@@ -23,6 +23,15 @@ export const httpClient = axios.create({
   timeout: 30000,
 });
 
+export const publicHttpClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    Accept: "application/json",
+  },
+  withCredentials: false,
+  timeout: 30000,
+});
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }

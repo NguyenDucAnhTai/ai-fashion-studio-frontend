@@ -12,6 +12,27 @@ import {
   type VerifyResetOtpFormValues,
 } from "./schemas";
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function readResetToken(response: unknown) {
+  const data = isRecord(response) && "data" in response ? response.data : response;
+
+  if (typeof data === "string" && data.trim()) {
+    return data.trim();
+  }
+
+  if (!isRecord(data)) {
+    return null;
+  }
+
+  const token =
+    data.resetToken ?? data.ResetToken ?? data.token ?? data.reset_token;
+
+  return typeof token === "string" && token.trim() ? token.trim() : null;
+}
+
 export default function VerifyResetOtpPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -34,9 +55,12 @@ export default function VerifyResetOtpPage() {
     verifyResetOtpMutation.mutate(
       { email, otp },
       {
-        onSuccess: () => {
+        onSuccess: (response) => {
+          const resetToken = readResetToken(response) ?? otp;
+
           navigate(
-            `/reset-password?email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp)}`,
+            `/reset-password?email=${encodeURIComponent(email)}`,
+            { state: { resetToken } },
           );
         },
       },

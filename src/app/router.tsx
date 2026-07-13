@@ -29,11 +29,15 @@ import StaffOrderDetailPage from "../features/staff/StaffOrderDetailPage";
 import StaffOrderListPage from "../features/staff/StaffOrderListPage";
 import TryOnPage from "../features/tryon/TryOnPage";
 import TryOnResultPage from "../features/tryon/TryOnResultPage";
+import EditProfilePage from "../features/user/EditProfilePage";
+import ProfilePage from "../features/user/ProfilePage";
 import GuestRoute from "../shared/components/GuestRoute";
 import ProtectedRoute from "../shared/components/ProtectedRoute";
 import RoleGuard from "../shared/components/RoleGuard";
 import { ROLES, type Role } from "../shared/constants/roles";
+import AdminLayout from "../shared/layouts/AdminLayout";
 import MainLayout from "../shared/layouts/MainLayout";
+import StaffLayout from "../shared/layouts/StaffLayout";
 
 const customerOnly: Role[] = [ROLES.customer];
 const staffRoles: Role[] = [ROLES.staff, ROLES.admin];
@@ -63,6 +67,8 @@ export const router = createBrowserRouter([
       { path: "forgot-password", element: <ForgotPasswordPage /> },
       { path: "verify-reset-otp", element: <VerifyResetOtpPage /> },
       { path: "reset-password", element: <ResetPasswordPage /> },
+      { path: "profile", element: protect(<ProfilePage />) },
+      { path: "profile/edit", element: protect(<EditProfilePage />) },
       { path: "designs/my", element: protect(<MyDesignsPage />, customerOnly) },
       {
         path: "designs/:designId/editor",
@@ -101,37 +107,29 @@ export const router = createBrowserRouter([
         path: "orders/:orderId/feedback",
         element: protect(<SubmitFeedbackPage />, customerOnly),
       },
-      { path: "staff", element: protect(<StaffDashboardPage />, staffRoles) },
-      {
-        path: "staff/orders",
-        element: protect(<StaffOrderListPage />, staffRoles),
-      },
-      {
-        path: "staff/orders/:orderId",
-        element: protect(<StaffOrderDetailPage />, staffRoles),
-      },
-      {
-        path: "staff/orders/:orderId/print-info",
-        element: protect(<PrintInfoPage />, staffRoles),
-      },
-      {
-        path: "staff/orders/:orderId/print",
-        element: protect(<PrintInfoPage />, staffRoles),
-      },
-      {
-        path: "staff/feedbacks",
-        element: protect(<FeedbackModerationPage />, staffRoles),
-      },
-      { path: "admin/login", element: <GuestRoute><AdminLoginPage /></GuestRoute> },
-      { path: "admin", element: protect(<AdminDashboardPage />, adminOnly) },
-      {
-        path: "admin/dashboard",
-        element: <Navigate to="/admin" replace />,
-      },
-      {
-        path: "admin/catalogs",
-        element: protect(<CatalogManagementPage />, adminOnly),
-      },
+    ],
+  },
+  { path: "/admin/login", element: <GuestRoute><AdminLoginPage /></GuestRoute> },
+  {
+    path: "/admin",
+    element: protect(<AdminLayout />, adminOnly),
+    children: [
+      { index: true, element: <AdminDashboardPage /> },
+      { path: "dashboard", element: <Navigate to="/admin" replace /> },
+      { path: "products", element: <CatalogManagementPage /> },
+      { path: "catalogs", element: <Navigate to="/admin/products" replace /> },
+    ],
+  },
+  {
+    path: "/staff",
+    element: protect(<StaffLayout />, staffRoles),
+    children: [
+      { index: true, element: <StaffDashboardPage /> },
+      { path: "orders", element: <StaffOrderListPage /> },
+      { path: "orders/:orderId", element: <StaffOrderDetailPage /> },
+      { path: "orders/:orderId/print-info", element: <PrintInfoPage /> },
+      { path: "orders/:orderId/print", element: <PrintInfoPage /> },
+      { path: "feedbacks", element: <FeedbackModerationPage /> },
     ],
   },
 ]);
