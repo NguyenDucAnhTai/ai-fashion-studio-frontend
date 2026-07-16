@@ -10,14 +10,14 @@ export interface BankInfo {
 
 export interface CreatePaymentRequest {
   orderId: string;
-  provider: PaymentProvider;
-  returnUrl: string;
-  cancelUrl: string;
+  amount: number;
+  description: string;
 }
 
 export interface PaymentInfo {
   paymentId: string;
   orderId: string;
+  orderCode?: string;
   customerId?: string;
   provider?: PaymentProvider;
   paymentMethod?: PaymentProvider;
@@ -40,6 +40,15 @@ export type CreatePaymentResponse = PaymentInfo;
 export type PaymentByOrderResponse = PaymentInfo;
 
 export interface InvoiceResponse {
+  invoiceId: string;
   invoiceNumber: string;
-  invoicePdfUrl: string;
+  orderId?: string;
+  totalAmount?: number;
+  issuedAt?: string;
+  invoicePdfUrl?: string | null;
+}
+
+export interface InvoicePdfDownload {
+  blob: Blob;
+  filename: string;
 }

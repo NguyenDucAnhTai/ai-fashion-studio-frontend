@@ -1,5 +1,6 @@
 import { CheckCircle2, Download, RefreshCw, ShoppingBag } from "lucide-react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Badge from "../../shared/components/Badge";
 import Button from "../../shared/components/Button";
 import Container from "../../shared/components/Container";
@@ -9,29 +10,118 @@ import { PAYMENT_STATUS, getPaymentStatusTone } from "../../shared/constants/pay
 import { formatCurrency } from "../../shared/utils/formatCurrency";
 import { useAuthStore } from "../auth/authStore";
 import { MISSING_CUSTOMER_MESSAGE, useOrderDetailQuery } from "../order/api";
-import { getPaymentErrorMessage, useInvoiceQuery, usePaymentByOrderQuery } from "./api";
+import {
+  getPaymentErrorMessage,
+  useDownloadInvoicePdfMutation,
+  useInvoiceByOrderQuery,
+  usePaymentByOrderQuery,
+  usePaymentQuery,
+} from "./api";
+
+const PENDING_PAYMENT_CALLBACK_KEY = "pendingPaymentCallback";
+
+function readPendingPaymentCallback() {
+  try {
+    return JSON.parse(localStorage.getItem(PENDING_PAYMENT_CALLBACK_KEY) ?? "{}") as {
+      orderId?: string;
+      orderCode?: string;
+      paymentId?: string;
+    };
+  } catch {
+    return {};
+  }
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = objectUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(objectUrl);
+}
 
 export default function PaymentSuccessPage() {
   const [searchParams] = useSearchParams();
-  const orderId = searchParams.get("orderId") ?? "";
+  const navigate = useNavigate();
+  const pendingCallback = readPendingPaymentCallback();
+  const callbackPaymentId =
+    searchParams.get("paymentId") ??
+    searchParams.get("id") ??
+    pendingCallback.paymentId ??
+    "";
+  const callbackOrderId = searchParams.get("orderId") ?? pendingCallback.orderId ?? "";
+  const orderCode = searchParams.get("orderCode") ?? pendingCallback.orderCode ?? "";
+  const callbackStatus = searchParams.get("status")?.toUpperCase() ?? "";
+  const callbackCancelled = searchParams.get("cancel") === "true";
   const userId = useAuthStore((state) => state.currentUser?.id ?? "");
+  const paymentByIdQuery = usePaymentQuery(
+    callbackPaymentId,
+    Boolean(!callbackOrderId && callbackPaymentId && userId),
+    true,
+  );
+  const paymentById = paymentByIdQuery.data?.data;
+  const orderId = callbackOrderId || paymentById?.orderId || "";
   const orderQuery = useOrderDetailQuery(userId ? orderId : "", userId);
   const paymentQuery = usePaymentByOrderQuery(orderId, Boolean(orderId && userId), true);
   const order = orderQuery.data?.data;
-  const payment = paymentQuery.data?.data;
+  const payment = paymentQuery.data?.data ?? paymentById;
   const paid = payment?.paymentStatus === PAYMENT_STATUS.paid || order?.paymentStatus === PAYMENT_STATUS.paid;
-  const invoiceQuery = useInvoiceQuery(payment?.paymentId ?? "", Boolean(payment?.paymentId && paid));
+  const invoiceQuery = useInvoiceByOrderQuery(orderId, Boolean(orderId && paid));
+  const invoiceDownload = useDownloadInvoicePdfMutation();
   const invoice = invoiceQuery.data?.data;
 
-  if (!orderId) {
-    return (
-      <section className="min-h-screen bg-beige-50 pt-28 pb-20">
-        <Container>
-          <ErrorState title="Missing order" description="Payment success needs an orderId query parameter." />
-        </Container>
-      </section>
+  const handleDownloadInvoice = () => {
+    if (!invoice?.invoiceId) {
+      return;
+    }
+
+    invoiceDownload.mutate(invoice.invoiceId, {
+      onSuccess: (response) => {
+        downloadBlob(response.blob, response.filename);
+      },
+    });
+  };
+
+  useEffect(() => {
+    if (callbackCancelled || callbackStatus === "CANCELLED") {
+      const params = new URLSearchParams();
+
+      if (orderId) {
+        params.set("orderId", orderId);
+      }
+
+      if (orderCode) {
+        params.set("orderCode", orderCode);
+      }
+
+      navigate(`/payment/cancel?${params.toString()}`, { replace: true });
+    }
+  }, [callbackCancelled, callbackStatus, navigate, orderCode, orderId]);
+
+  useEffect(() => {
+    if (paid) {
+      localStorage.removeItem(PENDING_PAYMENT_CALLBACK_KEY);
+    }
+  }, [paid]);
+
+  useEffect(() => {
+    if (!paymentById?.orderId) {
+      return;
+    }
+
+    localStorage.setItem(
+      PENDING_PAYMENT_CALLBACK_KEY,
+      JSON.stringify({
+        orderId: paymentById.orderId,
+        orderCode: paymentById.orderCode ?? orderCode,
+        paymentId: paymentById.paymentId,
+      }),
     );
-  }
+  }, [orderCode, paymentById]);
 
   if (!userId) {
     return (
@@ -40,6 +130,27 @@ export default function PaymentSuccessPage() {
           <ErrorState
             title="Cannot load payment status"
             description={MISSING_CUSTOMER_MESSAGE}
+          />
+        </Container>
+      </section>
+    );
+  }
+
+  if (!orderId && paymentByIdQuery.isLoading) {
+    return (
+      <section className="min-h-screen bg-beige-50 pt-28 pb-20">
+        <Loading label="Restoring payment status..." />
+      </section>
+    );
+  }
+
+  if (!orderId) {
+    return (
+      <section className="min-h-screen bg-beige-50 pt-28 pb-20">
+        <Container>
+          <ErrorState
+            title="Cannot restore order"
+            description="The payment provider returned without order information. Please open My orders to check the latest payment status."
           />
         </Container>
       </section>
@@ -101,17 +212,25 @@ export default function PaymentSuccessPage() {
             </p>
           )}
 
+          {invoiceDownload.isError && (
+            <p className="mt-5 rounded-2xl bg-error-50 px-4 py-3 text-sm text-error-700">
+              {getPaymentErrorMessage(invoiceDownload.error)}
+            </p>
+          )}
+
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-            {invoice?.invoicePdfUrl && (
-              <a
-                href={invoice.invoicePdfUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-primary-900 px-6 py-3 text-sm font-semibold text-primary-900 transition hover:bg-primary-900 hover:text-white"
+            {paid && (
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                loading={invoiceQuery.isLoading || invoiceDownload.isPending}
+                disabled={!invoice?.invoiceId}
+                onClick={handleDownloadInvoice}
               >
                 <Download size={16} />
                 Download invoice
-              </a>
+              </Button>
             )}
             {!paid && (
               <Button type="button" variant="outline" className="flex-1" onClick={() => paymentQuery.refetch()}>

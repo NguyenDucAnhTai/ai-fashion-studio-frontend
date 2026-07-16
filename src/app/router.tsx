@@ -87,6 +87,10 @@ export const router = createBrowserRouter([
         element: protect(<CheckoutPage />, customerOnly),
       },
       {
+        path: "checkout",
+        element: protect(<CheckoutPage />, customerOnly),
+      },
+      {
         path: "payment/:orderId",
         element: protect(<PaymentPage />, customerOnly),
       },

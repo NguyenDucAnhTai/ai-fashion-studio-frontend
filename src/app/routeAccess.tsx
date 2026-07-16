@@ -83,6 +83,11 @@ export const ROUTE_ACCESS: RouteAccessEntry[] = [
     roles: ROLE_GROUPS.customerOnly,
   },
   {
+    path: "checkout",
+    element: <CheckoutPage />,
+    roles: ROLE_GROUPS.customerOnly,
+  },
+  {
     path: "payment/:orderId",
     element: <PaymentPage />,
     roles: ROLE_GROUPS.customerOnly,

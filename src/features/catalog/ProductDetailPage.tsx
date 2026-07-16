@@ -319,7 +319,35 @@ export default function ProductDetailPage() {
   };
 
   const handleBuyNow = () => {
-    setBuyError("Missing product, variant, or design information.");
+    setBuyError("");
+    setDesignValidationError("");
+
+    if (!product.id || !selectedVariant?.id) {
+      setBuyError("Missing product or variant information.");
+      return;
+    }
+
+    if (!isAuthenticated) {
+      navigate(`/login?redirect=/products/${product.id}`);
+      return;
+    }
+
+    if (selectedVariant.status.toUpperCase() !== "ACTIVE") {
+      setBuyError("This variant is not available.");
+      return;
+    }
+
+    if (selectedVariant.availableQuantity <= 0) {
+      setBuyError("This variant is not available.");
+      return;
+    }
+
+    navigate("/checkout", {
+      state: {
+        productId: product.id,
+        productVariantId: selectedVariant.id,
+      },
+    });
   };
 
   return (
@@ -552,7 +580,8 @@ export default function ProductDetailPage() {
             <button
               type="button"
               onClick={handleBuyNow}
-              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full border border-primary-200 bg-white px-8 py-3.5 text-base font-medium text-primary-900 transition hover:border-primary-950 hover:bg-primary-950 hover:text-white"
+              disabled={!canStartDesign}
+              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full border border-primary-200 bg-white px-8 py-3.5 text-base font-medium text-primary-900 transition hover:border-primary-950 hover:bg-primary-950 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-primary-200 disabled:hover:bg-white disabled:hover:text-primary-900"
             >
               <ShoppingBag size={17} />
               Mua hàng

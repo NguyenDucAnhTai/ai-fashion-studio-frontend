@@ -1,10 +1,11 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { apiRequest, getApiErrorMessage } from "../../shared/api/httpClient";
+import { apiRequest, getApiErrorMessage, httpClient } from "../../shared/api/httpClient";
 import type { ApiResponse } from "../../shared/api/apiResponse";
 import type {
   BankInfo,
   CreatePaymentRequest,
+  InvoicePdfDownload,
   InvoiceResponse,
   PaymentInfo,
   PaymentProvider,
@@ -41,6 +42,26 @@ function readNumber(value: unknown, fallback = 0) {
   return Number.isFinite(numberValue) ? numberValue : fallback;
 }
 
+function readOptionalNumber(value: unknown) {
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : undefined;
+}
+
+function readFilenameFromContentDisposition(value: unknown) {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  const utf8Match = /filename\*=UTF-8''([^;]+)/i.exec(value);
+
+  if (utf8Match?.[1]) {
+    return decodeURIComponent(utf8Match[1].replace(/["]/g, ""));
+  }
+
+  const filenameMatch = /filename="?([^";]+)"?/i.exec(value);
+  return filenameMatch?.[1]?.trim() ?? "";
+}
+
 function mapApiResponse<T>(
   response: ApiResponse<unknown>,
   data: T | null,
@@ -75,27 +96,33 @@ function normalizePaymentInfo(value: unknown): PaymentInfo | null {
     return null;
   }
 
-  const paymentId = readString(value.paymentId) || readString(value.id);
+  const orderCode = value.orderCode == null ? "" : String(value.orderCode);
+  const paymentId =
+    readString(value.paymentId) ||
+    readString(value.id) ||
+    readString(value.providerPaymentId) ||
+    orderCode;
   const provider =
     normalizeProvider(value.provider) ?? normalizeProvider(value.paymentMethod);
 
-  if (!paymentId) {
+  if (!paymentId && !readString(value.checkoutUrl)) {
     return null;
   }
 
   return {
-    paymentId,
+    paymentId: paymentId || readString(value.checkoutUrl),
     orderId: readString(value.orderId),
+    orderCode: orderCode || undefined,
     customerId: readString(value.customerId) || undefined,
     provider,
     paymentMethod: provider,
     amount: readNumber(value.amount),
-    paymentStatus: readString(value.paymentStatus, "PENDING"),
+    paymentStatus: readString(value.paymentStatus) || readString(value.status, "PENDING"),
     providerPaymentId: readNullableString(value.providerPaymentId),
     transactionCode: readNullableString(value.transactionCode),
     checkoutUrl: readNullableString(value.checkoutUrl),
     qrCodeUrl: readNullableString(value.qrCodeUrl),
-    paymentContent: readNullableString(value.paymentContent),
+    paymentContent: readNullableString(value.paymentContent) ?? readNullableString(value.qrCode),
     bankInfo: normalizeBankInfo(value.bankInfo),
     invoiceNumber: readNullableString(value.invoiceNumber),
     invoicePdfUrl: readNullableString(value.invoicePdfUrl),
@@ -109,15 +136,19 @@ function normalizeInvoice(value: unknown): InvoiceResponse | null {
     return null;
   }
 
-  const invoicePdfUrl = readString(value.invoicePdfUrl);
+  const invoiceId = readString(value.invoiceId) || readString(value.id);
 
-  if (!invoicePdfUrl) {
+  if (!invoiceId) {
     return null;
   }
 
   return {
-    invoiceNumber: readString(value.invoiceNumber),
-    invoicePdfUrl,
+    invoiceId,
+    invoiceNumber: readString(value.invoiceNumber) || readString(value.invoiceCode) || invoiceId,
+    orderId: readString(value.orderId) || undefined,
+    totalAmount: readOptionalNumber(value.totalAmount),
+    issuedAt: readString(value.issuedAt) || readString(value.createdAt) || undefined,
+    invoicePdfUrl: readNullableString(value.invoicePdfUrl) ?? readNullableString(value.pdfUrl),
   };
 }
 
@@ -156,7 +187,11 @@ export async function createPayment(payload: CreatePaymentRequest) {
     data: payload,
   });
 
-  return mapApiResponse(response, normalizePaymentInfo(response.data));
+  const data = isRecord(response.data)
+    ? { ...response.data, orderId: response.data.orderId ?? payload.orderId }
+    : response.data;
+
+  return mapApiResponse(response, normalizePaymentInfo(data));
 }
 
 export async function getPaymentByOrder(orderId: string) {
@@ -174,7 +209,7 @@ export async function getPaymentByOrder(orderId: string) {
   return mapApiResponse(response, normalizePaymentInfo(response.data));
 }
 
-export async function getInvoice(paymentId: string) {
+export async function getPayment(paymentId: string) {
   const safePaymentId = paymentId.trim();
 
   if (!safePaymentId) {
@@ -182,26 +217,123 @@ export async function getInvoice(paymentId: string) {
   }
 
   const response = await apiRequest<unknown>({
-    url: `/payments/${safePaymentId}/invoice`,
+    url: `/payments/${safePaymentId}`,
+    method: "GET",
+  });
+
+  return mapApiResponse(response, normalizePaymentInfo(response.data));
+}
+
+export function cancelPayment(orderCode: string) {
+  const safeOrderCode = orderCode.trim();
+
+  if (!safeOrderCode) {
+    throw new Error("Order code is required");
+  }
+
+  return apiRequest<PaymentInfo>({
+    url: `/payments/${safeOrderCode}/cancel`,
+    method: "POST",
+  });
+}
+
+export async function getInvoice(invoiceId: string) {
+  const safeInvoiceId = invoiceId.trim();
+
+  if (!safeInvoiceId) {
+    throw new Error("Invoice id is required");
+  }
+
+  const response = await apiRequest<unknown>({
+    url: `/invoices/${safeInvoiceId}`,
     method: "GET",
   });
 
   return mapApiResponse(response, normalizeInvoice(response.data));
 }
 
+export async function getInvoiceByOrder(orderId: string) {
+  const safeOrderId = orderId.trim();
+
+  if (!safeOrderId) {
+    throw new Error("Order id is required");
+  }
+
+  const response = await apiRequest<unknown>({
+    url: `/invoices/order/${safeOrderId}`,
+    method: "GET",
+  });
+
+  return mapApiResponse(response, normalizeInvoice(response.data));
+}
+
+export async function downloadInvoicePdf(invoiceId: string): Promise<InvoicePdfDownload> {
+  const safeInvoiceId = invoiceId.trim();
+
+  if (!safeInvoiceId) {
+    throw new Error("Invoice id is required");
+  }
+
+  const response = await httpClient.get<Blob>(`/invoices/${safeInvoiceId}/pdf`, {
+    responseType: "blob",
+  });
+  const contentDisposition = response.headers["content-disposition"];
+  const filename =
+    readFilenameFromContentDisposition(contentDisposition) || `invoice-${safeInvoiceId}.pdf`;
+
+  return {
+    blob: response.data,
+    filename,
+  };
+}
+
 export function useCreatePaymentMutation() {
   return useMutation({ mutationFn: createPayment });
+}
+
+export function useCancelPaymentMutation() {
+  return useMutation({ mutationFn: cancelPayment });
+}
+
+export function usePaymentQuery(
+  paymentId: string,
+  enabled: boolean,
+  pollPending = false,
+) {
+  return useQuery<ApiResponse<PaymentInfo>>({
+    queryKey: ["payments", paymentId],
+    queryFn: () => getPayment(paymentId),
+    enabled: Boolean(paymentId) && enabled,
+    retry: false,
+    refetchInterval: (query) => {
+      const status = query.state.data?.data?.paymentStatus;
+      return pollPending && status === "PENDING" ? 5000 : false;
+    },
+  });
 }
 
 export function useInvoiceMutation() {
   return useMutation({ mutationFn: getInvoice });
 }
 
-export function useInvoiceQuery(paymentId: string, enabled: boolean) {
+export function useDownloadInvoicePdfMutation() {
+  return useMutation({ mutationFn: downloadInvoicePdf });
+}
+
+export function useInvoiceQuery(invoiceId: string, enabled: boolean) {
   return useQuery<ApiResponse<InvoiceResponse>>({
-    queryKey: ["payments", paymentId, "invoice"],
-    queryFn: () => getInvoice(paymentId),
-    enabled: Boolean(paymentId) && enabled,
+    queryKey: ["invoices", invoiceId],
+    queryFn: () => getInvoice(invoiceId),
+    enabled: Boolean(invoiceId) && enabled,
+    retry: false,
+  });
+}
+
+export function useInvoiceByOrderQuery(orderId: string, enabled: boolean) {
+  return useQuery<ApiResponse<InvoiceResponse>>({
+    queryKey: ["invoices", "order", orderId],
+    queryFn: () => getInvoiceByOrder(orderId),
+    enabled: Boolean(orderId) && enabled,
     retry: false,
   });
 }

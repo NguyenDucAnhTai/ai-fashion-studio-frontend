@@ -27,6 +27,9 @@ const DESIGN_ERROR_MESSAGES: Record<string, string> = {
   DESIGN_LOCKED: "This design is locked.",
   INVALID_CANVAS_JSON: "Canvas data is invalid.",
   DESIGN_LAYER_LIMIT_EXCEEDED: "Too many design layers.",
+  DESIGN_MUST_BE_SAVED: "Please save the design before ordering.",
+  DESIGN_PRODUCT_MISMATCH:
+    "This design does not match the selected product/variant.",
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -70,7 +73,7 @@ function normalizeDesignLayer(value: unknown, index: number): DesignLayer | null
   return {
     layerType,
     content: readString(value.content) || null,
-    imageUrl: readString(value.imageUrl) || null,
+    imageUrl: readString(value.imageUrl) || readString(value.content) || null,
     positionX: readNumber(value.positionX),
     positionY: readNumber(value.positionY),
     width: readNumber(value.width),

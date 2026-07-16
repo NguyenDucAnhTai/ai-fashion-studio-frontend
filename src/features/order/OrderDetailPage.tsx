@@ -18,22 +18,37 @@ import { formatDate } from "../../shared/utils/formatDate";
 import { useAuthStore } from "../auth/authStore";
 import {
   getPaymentErrorMessage,
-  useInvoiceMutation,
+  useDownloadInvoicePdfMutation,
+  useInvoiceByOrderQuery,
   usePaymentByOrderQuery,
 } from "../payment/api";
 import { MISSING_CUSTOMER_MESSAGE, useOrderDetailQuery } from "./api";
+
+function downloadBlob(blob: Blob, filename: string) {
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = objectUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(objectUrl);
+}
 
 export default function OrderDetailPage() {
   const { orderId = "" } = useParams();
   const userId = useAuthStore((state) => state.currentUser?.id ?? "");
   const orderQuery = useOrderDetailQuery(userId ? orderId : "", userId);
   const paymentQuery = usePaymentByOrderQuery(orderId, Boolean(orderId && userId), false);
-  const invoiceMutation = useInvoiceMutation();
   const order = orderQuery.data?.data;
   const payment = paymentQuery.data?.data;
   const isPaid =
     order?.paymentStatus === PAYMENT_STATUS.paid ||
     payment?.paymentStatus === PAYMENT_STATUS.paid;
+  const invoiceQuery = useInvoiceByOrderQuery(orderId, Boolean(orderId && isPaid));
+  const invoiceDownload = useDownloadInvoicePdfMutation();
+  const invoice = invoiceQuery.data?.data;
   const canPay =
     Boolean(order) &&
     !isPaid &&
@@ -42,15 +57,13 @@ export default function OrderDetailPage() {
       payment?.paymentStatus === PAYMENT_STATUS.pending);
 
   const handleDownloadInvoice = () => {
-    if (!payment?.paymentId) {
+    if (!invoice?.invoiceId) {
       return;
     }
 
-    invoiceMutation.mutate(payment.paymentId, {
+    invoiceDownload.mutate(invoice.invoiceId, {
       onSuccess: (response) => {
-        if (response.data?.invoicePdfUrl) {
-          window.open(response.data.invoicePdfUrl, "_blank", "noopener,noreferrer");
-        }
+        downloadBlob(response.blob, response.filename);
       },
     });
   };
@@ -219,12 +232,13 @@ export default function OrderDetailPage() {
                 </Link>
               )}
 
-              {isPaid && payment?.paymentId && (
+              {isPaid && (
                 <Button
                   type="button"
                   variant="outline"
                   className="mt-5 w-full"
-                  loading={invoiceMutation.isPending}
+                  loading={invoiceQuery.isLoading || invoiceDownload.isPending}
+                  disabled={!invoice?.invoiceId}
                   onClick={handleDownloadInvoice}
                 >
                   <Download size={16} />
@@ -238,26 +252,25 @@ export default function OrderDetailPage() {
                 </p>
               )}
 
-              {invoiceMutation.isError && (
+              {invoiceQuery.isError && (
                 <p className="mt-4 rounded-2xl bg-error-50 px-4 py-3 text-sm text-error-700">
-                  {getPaymentErrorMessage(invoiceMutation.error)}
+                  {getPaymentErrorMessage(invoiceQuery.error)}
                 </p>
               )}
 
-              {invoiceMutation.data?.data && (
+              {invoiceDownload.isError && (
+                <p className="mt-4 rounded-2xl bg-error-50 px-4 py-3 text-sm text-error-700">
+                  {getPaymentErrorMessage(invoiceDownload.error)}
+                </p>
+              )}
+
+              {invoice && (
                 <div className="mt-4 rounded-2xl bg-success-50 px-4 py-3 text-sm text-success-700">
                   <div className="flex items-center gap-2 font-semibold">
                     <ReceiptText size={16} />
-                    {invoiceMutation.data.data.invoiceNumber || "Invoice"}
+                    {invoice.invoiceNumber || "Invoice"}
                   </div>
-                  <a
-                    href={invoiceMutation.data.data.invoicePdfUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 inline-flex font-semibold underline"
-                  >
-                    Open invoice PDF
-                  </a>
+                  <p className="mt-2">Invoice is ready to download.</p>
                 </div>
               )}
             </section>
