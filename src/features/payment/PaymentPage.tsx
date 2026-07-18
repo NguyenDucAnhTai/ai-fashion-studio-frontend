@@ -5,14 +5,13 @@ import {
   RefreshCw,
   ShoppingBag,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Badge from "../../shared/components/Badge";
 import Button from "../../shared/components/Button";
 import Container from "../../shared/components/Container";
 import ErrorState from "../../shared/components/ErrorState";
 import Loading from "../../shared/components/Loading";
-import Select from "../../shared/components/Select";
 import { PAYMENT_STATUS, getPaymentStatusTone } from "../../shared/constants/paymentStatus";
 import { formatCurrency } from "../../shared/utils/formatCurrency";
 import { formatDate } from "../../shared/utils/formatDate";
@@ -24,27 +23,44 @@ import {
   useCreatePaymentMutation,
   usePaymentByOrderQuery,
 } from "./api";
-import type { PaymentInfo, PaymentProvider } from "./types";
+import type { PaymentInfo } from "./types";
+
+const PENDING_PAYMENT_CALLBACK_KEY = "pendingPaymentCallback";
 
 function getPaymentProvider(payment: PaymentInfo) {
   return payment.provider ?? payment.paymentMethod ?? "PAYOS";
 }
 
+function savePendingPaymentCallback(orderId: string, orderCode?: string, payment?: PaymentInfo | null) {
+  localStorage.setItem(
+    PENDING_PAYMENT_CALLBACK_KEY,
+    JSON.stringify({
+      orderId,
+      orderCode: payment?.orderCode ?? orderCode,
+      paymentId: payment?.paymentId,
+    }),
+  );
+}
+
 export default function PaymentPage() {
   const { orderId = "" } = useParams();
   const navigate = useNavigate();
-  const [provider, setProvider] = useState<PaymentProvider>("PAYOS");
   const [createdPayment, setCreatedPayment] = useState<PaymentInfo | null>(null);
   const [copied, setCopied] = useState(false);
   const userId = useAuthStore((state) => state.currentUser?.id ?? "");
   const orderQuery = useOrderDetailQuery(userId ? orderId : "", userId);
   const paymentQuery = usePaymentByOrderQuery(orderId, Boolean(orderId && userId), true);
   const createPayment = useCreatePaymentMutation();
-  const origin = useMemo(() => window.location.origin, []);
   const order = orderQuery.data?.data;
   const payment = paymentQuery.data?.data ?? createdPayment;
   const hasPayment = Boolean(payment);
-  const paymentProvider = payment ? getPaymentProvider(payment) : provider;
+  const paymentProvider = payment ? getPaymentProvider(payment) : "PAYOS";
+
+  useEffect(() => {
+    if (order && payment) {
+      savePendingPaymentCallback(orderId, order.orderCode, payment);
+    }
+  }, [order, orderId, payment]);
 
   useEffect(() => {
     if (
@@ -56,18 +72,28 @@ export default function PaymentPage() {
   }, [navigate, order?.paymentStatus, orderId, payment?.paymentStatus]);
 
   const handleCreatePayment = () => {
+    if (!order) {
+      return;
+    }
+
+    const shortDescription = `Order ${order.orderCode ?? orderId}`.slice(0, 25);
+
     createPayment.mutate(
       {
         orderId,
-        provider,
-        returnUrl: `${origin}/payment/success?orderId=${orderId}`,
-        cancelUrl: `${origin}/payment/cancel?orderId=${orderId}`,
+        amount: order.totalAmount,
+        description: shortDescription,
       },
       {
         onSuccess: (response) => {
           if (response.data) {
             setCreatedPayment(response.data);
             void paymentQuery.refetch();
+
+            if (response.data.checkoutUrl) {
+              savePendingPaymentCallback(orderId, order.orderCode, response.data);
+              window.location.assign(response.data.checkoutUrl);
+            }
           }
         },
         onError: (error) => {
@@ -189,17 +215,12 @@ export default function PaymentPage() {
               </section>
 
               <section className="rounded-3xl border border-primary-100 bg-white p-6 shadow-soft">
-                <Select
-                  label="Payment method"
-                  value={provider}
-                  disabled={hasPayment}
-                  onChange={(event) =>
-                    setProvider(event.target.value as PaymentProvider)
-                  }
-                >
-                  <option value="PAYOS">PayOS checkout</option>
-                  <option value="SEPAY">SePay QR transfer</option>
-                </Select>
+                <p className="text-sm font-semibold text-primary-950">
+                  Payment request
+                </p>
+                <p className="mt-2 text-xs leading-5 text-primary-500">
+                  Create a payment request for this order using the backend payment API.
+                </p>
 
                 <Button
                   type="button"
@@ -235,7 +256,7 @@ export default function PaymentPage() {
                       Payment instruction will appear here
                     </p>
                     <p className="mt-2 text-xs text-primary-400">
-                      Choose a provider and create payment.
+                      Create payment to show payment instructions.
                     </p>
                   </div>
                 </div>
@@ -267,6 +288,7 @@ export default function PaymentPage() {
                       href={payment.checkoutUrl}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => savePendingPaymentCallback(orderId, order.orderCode, payment)}
                       className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-primary-700"
                     >
                       Pay now

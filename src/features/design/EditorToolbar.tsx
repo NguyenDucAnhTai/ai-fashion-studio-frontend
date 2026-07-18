@@ -1,12 +1,21 @@
-import { ImagePlus, Save, Trash2, Type } from "lucide-react";
+import { ImagePlus, Save, Sparkles, Trash2, Type } from "lucide-react";
 import Button from "../../shared/components/Button";
 import Input from "../../shared/components/Input";
+
+export interface StickerAsset {
+  id: string;
+  label: string;
+  preview: string;
+  svg: string;
+}
 
 interface EditorToolbarProps {
   locked: boolean;
   selectedColor: string;
   saving: boolean;
+  stickerAssets: StickerAsset[];
   onAddText: () => void;
+  onAddSticker: (asset: StickerAsset) => void;
   onUploadImage: (file: File) => void;
   onDelete: () => void;
   onColorChange: (color: string) => void;
@@ -17,7 +26,9 @@ export default function EditorToolbar({
   locked,
   selectedColor,
   saving,
+  stickerAssets,
   onAddText,
+  onAddSticker,
   onUploadImage,
   onDelete,
   onColorChange,
@@ -59,6 +70,28 @@ export default function EditorToolbar({
           <Trash2 size={16} />
           Delete selected
         </Button>
+      </div>
+
+      <div className="mt-6 border-t border-primary-100 pt-5">
+        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-primary-950">
+          <Sparkles size={16} />
+          Graphics
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {stickerAssets.map((asset) => (
+            <button
+              key={asset.id}
+              type="button"
+              disabled={locked}
+              onClick={() => onAddSticker(asset)}
+              className="flex aspect-square items-center justify-center rounded-2xl border border-primary-100 bg-beige-50 text-2xl transition hover:border-primary-900 hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label={`Add ${asset.label}`}
+              title={asset.label}
+            >
+              {asset.preview}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="mt-6 border-t border-primary-100 pt-5">

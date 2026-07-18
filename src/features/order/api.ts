@@ -304,10 +304,14 @@ export async function createOrder(
   userId?: string | null,
 ) {
   const customerId = requireCustomerId(userId);
+  const requestPayload = {
+    ...payload,
+    Description: payload.Description || payload.description || "Product order",
+  };
   const response = await apiRequest<unknown>({
     url: "/api/orders",
     method: "POST",
-    data: payload,
+    data: requestPayload,
     headers: getCustomerHeaders(customerId),
   });
 

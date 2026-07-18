@@ -10,12 +10,14 @@ export interface OrderVariantSnapshot {
 export interface CreateOrderItemRequest {
   productId: string;
   productVariantId: string;
-  designId: string;
+  designId?: string;
   quantity: number;
 }
 
 export interface CreateOrderRequest {
   items: CreateOrderItemRequest[];
+  Description: string;
+  description?: string;
   receiverName: string;
   receiverPhone: string;
   shippingAddress: string;

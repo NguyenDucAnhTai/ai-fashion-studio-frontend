@@ -5,6 +5,10 @@ import { useAuthStore } from "../../features/auth/authStore";
 const RAW_API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
 const API_BASE_URL = RAW_API_BASE_URL.replace(/\/api\/?$/, "");
+const IS_NGROK_API = API_BASE_URL.includes("ngrok-free.app");
+const NGROK_SKIP_BROWSER_WARNING_HEADERS = IS_NGROK_API
+  ? { "ngrok-skip-browser-warning": "true" }
+  : {};
 
 const AUTH_ENTRYPOINTS = [
   "/api/auth/login",
@@ -18,6 +22,7 @@ export const httpClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
+    ...NGROK_SKIP_BROWSER_WARNING_HEADERS,
   },
   withCredentials: true,
   timeout: 30000,
@@ -27,6 +32,7 @@ export const publicHttpClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     Accept: "application/json",
+    ...NGROK_SKIP_BROWSER_WARNING_HEADERS,
   },
   withCredentials: false,
   timeout: 30000,
@@ -48,6 +54,71 @@ function getAccessToken() {
   return useAuthStore.getState().accessToken ?? localStorage.getItem("accessToken");
 }
 
+function readJwtStringClaim(payload: Record<string, unknown>, claim: string) {
+  const value = payload[claim];
+  return typeof value === "string" && value.trim() ? value.trim() : "";
+}
+
+function getUserIdFromAccessToken(accessToken: string | null) {
+  if (!accessToken) {
+    return "";
+  }
+
+  const [, encodedPayload] = accessToken.split(".");
+
+  if (!encodedPayload) {
+    return "";
+  }
+
+  try {
+    const normalizedPayload = encodedPayload
+      .replace(/-/g, "+")
+      .replace(/_/g, "/")
+      .padEnd(Math.ceil(encodedPayload.length / 4) * 4, "=");
+    const payload = JSON.parse(atob(normalizedPayload)) as Record<string, unknown>;
+
+    return (
+      readJwtStringClaim(payload, "userId") ||
+      readJwtStringClaim(payload, "id") ||
+      readJwtStringClaim(payload, "sub") ||
+      readJwtStringClaim(
+        payload,
+        "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier",
+      )
+    );
+  } catch {
+    return "";
+  }
+}
+
+function getCurrentUserId() {
+  const storeUserId = useAuthStore.getState().currentUser?.id?.trim();
+
+  if (storeUserId) {
+    return storeUserId;
+  }
+
+  const rawUser = localStorage.getItem("currentUser");
+
+  if (!rawUser) {
+    return getUserIdFromAccessToken(getAccessToken());
+  }
+
+  try {
+    const user = JSON.parse(rawUser) as { id?: unknown; userId?: unknown };
+    const userId =
+      typeof user.id === "string"
+        ? user.id.trim()
+        : typeof user.userId === "string"
+          ? user.userId.trim()
+          : "";
+
+    return userId || getUserIdFromAccessToken(getAccessToken());
+  } catch {
+    return getUserIdFromAccessToken(getAccessToken());
+  }
+}
+
 function readMessage(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
@@ -67,11 +138,17 @@ function normalizeApiEnvelope<T>(payload: Partial<ApiResponse<T>>): ApiResponse<
 
 httpClient.interceptors.request.use((config) => {
   const accessToken = getAccessToken();
+  const currentUserId = getCurrentUserId();
 
   config.url = normalizeApiPath(config.url);
 
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
+  }
+
+  if (currentUserId && !config.headers["X-User-Id"]) {
+    // Backend currently requires X-User-Id for customer-scoped APIs.
+    config.headers["X-User-Id"] = currentUserId;
   }
 
   return config;

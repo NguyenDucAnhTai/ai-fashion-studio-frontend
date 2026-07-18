@@ -27,6 +27,10 @@ const DESIGN_ERROR_MESSAGES: Record<string, string> = {
   DESIGN_LOCKED: "This design is locked.",
   INVALID_CANVAS_JSON: "Canvas data is invalid.",
   DESIGN_LAYER_LIMIT_EXCEEDED: "Too many design layers.",
+  DESIGN_IMAGE_GENERATION_FAILED:
+    "AI image generation is temporarily unavailable. Please try again.",
+  DESIGN_IMAGE_UPLOAD_FAILED:
+    "Could not store the generated image. Please try again.",
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -70,7 +74,8 @@ function normalizeDesignLayer(value: unknown, index: number): DesignLayer | null
   return {
     layerType,
     content: readString(value.content) || null,
-    imageUrl: readString(value.imageUrl) || null,
+    imageUrl: readString(value.imageUrl) || readString(value.content) || null,
+    imageUrl: readString(value.imageUrl) || readString(value.content) || null,
     positionX: readNumber(value.positionX),
     positionY: readNumber(value.positionY),
     width: readNumber(value.width),
@@ -293,9 +298,32 @@ export async function saveDesign(
   return mapApiResponse(response, normalizeSaveDesignResponse(response.data));
 }
 
+export async function generateDesignPreview(designId: string) {
+  const safeDesignId = designId.trim();
+
+  if (!safeDesignId) {
+    throw new Error("Design id is required");
+  }
+
+  const response = await apiRequest<unknown>({
+    url: `/api/designs/${safeDesignId}/generate-preview`,
+    method: "POST",
+    // AI image generation can take up to ~60s server-side; override the 30s client default.
+    timeout: 90000,
+  });
+
+  return mapApiResponse(response, normalizeSaveDesignResponse(response.data));
+}
+
 export function useCreateDraftDesignMutation() {
   return useMutation({
     mutationFn: createDraftDesign,
+  });
+}
+
+export function useGenerateDesignPreviewMutation(designId: string) {
+  return useMutation({
+    mutationFn: () => generateDesignPreview(designId),
   });
 }
 
