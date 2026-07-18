@@ -64,8 +64,10 @@ export interface DesignDetail {
 export interface SaveDesignRequest {
   name: string;
   canvasJson: unknown;
-  previewImageUrl: string;
-  printFileUrl: string;
+  // Optional per the java-core design contract. Must be real storage (MinIO) URLs, never base64 —
+  // omitted until a presigned-upload endpoint exists (no upload endpoint in the current API spec).
+  previewImageUrl?: string;
+  printFileUrl?: string;
   layers: DesignLayer[];
 }
 

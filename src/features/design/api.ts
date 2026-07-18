@@ -75,6 +75,7 @@ function normalizeDesignLayer(value: unknown, index: number): DesignLayer | null
     layerType,
     content: readString(value.content) || null,
     imageUrl: readString(value.imageUrl) || readString(value.content) || null,
+    imageUrl: readString(value.imageUrl) || readString(value.content) || null,
     positionX: readNumber(value.positionX),
     positionY: readNumber(value.positionY),
     width: readNumber(value.width),

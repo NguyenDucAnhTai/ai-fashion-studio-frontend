@@ -80,6 +80,7 @@ export default function CheckoutPage() {
 
   const onSubmit = (values: CheckoutFormValues) => {
     if (!product || !variant || !userId) {
+    if (!product || !variant || !userId) {
       return;
     }
 
@@ -90,8 +91,17 @@ export default function CheckoutPage() {
       quantity: values.quantity,
     };
 
+    const orderItem = {
+      productId: product.id,
+      productVariantId: variant.id,
+      ...(designId ? { designId } : {}),
+      quantity: values.quantity,
+    };
+
     createOrder.mutate(
       {
+        items: [orderItem],
+        Description: buildOrderDescription(values.quantity),
         items: [orderItem],
         Description: buildOrderDescription(values.quantity),
         receiverName: values.receiverName,
@@ -143,7 +153,13 @@ export default function CheckoutPage() {
           <h1 className="mt-3 font-display text-4xl font-semibold text-primary-950">
             {design ? "Confirm order from saved design" : "Confirm product order"}
           </h1>
+          <h1 className="mt-3 font-display text-4xl font-semibold text-primary-950">
+            {design ? "Confirm order from saved design" : "Confirm product order"}
+          </h1>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-primary-500">
+            {design
+              ? "Orders use the saved design file. A draft must be saved before checkout so backend can lock it after payment."
+              : "Review the selected product and shipping information. Creating this order calls the Orders API directly."}
             {design
               ? "Orders use the saved design file. A draft must be saved before checkout so backend can lock it after payment."
               : "Review the selected product and shipping information. Creating this order calls the Orders API directly."}
@@ -165,6 +181,8 @@ export default function CheckoutPage() {
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_430px]">
           <div className="rounded-3xl border border-primary-100 bg-white p-5 shadow-soft">
             <DesignPreview
+              imageUrl={design?.previewImageUrl ?? product.thumbnailUrl}
+              name={design?.name ?? product.name}
               imageUrl={design?.previewImageUrl ?? product.thumbnailUrl}
               name={design?.name ?? product.name}
               className="min-h-[440px]"
