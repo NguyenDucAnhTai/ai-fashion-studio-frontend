@@ -1,19 +1,31 @@
-import { ArrowDown, ArrowUp, ArrowUpDown, Boxes, Eye, Plus, Search, X } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Boxes,
+  Eye,
+  Plus,
+  RefreshCw,
+  Search,
+  X,
+} from "lucide-react";
 import { type FormEvent, useMemo, useState } from "react";
 import { getApiErrorMessage } from "../../../shared/api/httpClient";
 import Badge from "../../../shared/components/Badge";
 import Button from "../../../shared/components/Button";
-import Container from "../../../shared/components/Container";
 import EmptyState from "../../../shared/components/EmptyState";
 import ErrorState from "../../../shared/components/ErrorState";
 import Input from "../../../shared/components/Input";
-import Loading from "../../../shared/components/Loading";
 import Select from "../../../shared/components/Select";
 import Textarea from "../../../shared/components/Textarea";
 import type { BadgeTone } from "../../../shared/types";
 import { formatCurrency } from "../../../shared/utils/formatCurrency";
 import { formatDate } from "../../../shared/utils/formatDate";
-import { useAdminCatalogDetailQuery, useAdminCatalogsQuery, useCreateAdminCatalogMutation } from "./api";
+import {
+  useAdminCatalogDetailQuery,
+  useAdminCatalogsQuery,
+  useCreateAdminCatalogMutation,
+} from "./api";
 import type { AdminCatalog } from "./types";
 
 function getCatalogStatusTone(status: string): BadgeTone {
@@ -86,7 +98,9 @@ export default function CatalogManagementPage() {
     });
   }, [catalogs, keyword, statusFilter, sortKey, sortDir]);
 
+  const activeCatalogs = catalogs.filter((catalog) => catalog.status === "ACTIVE").length;
   const hasActiveFilters = Boolean(keyword) || statusFilter !== "ALL";
+  const detailErrorMessage = detailQuery.isError ? getApiErrorMessage(detailQuery.error) : "";
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -104,7 +118,7 @@ export default function CatalogManagementPage() {
 
   const renderSortIcon = (key: SortKey) => {
     if (sortKey !== key) {
-      return <ArrowUpDown size={13} className="text-primary-300" />;
+      return <ArrowUpDown size={13} className="text-slate-300" />;
     }
 
     return sortDir === "asc" ? <ArrowUp size={13} /> : <ArrowDown size={13} />;
@@ -136,266 +150,337 @@ export default function CatalogManagementPage() {
   };
 
   return (
-    <section className="min-h-screen bg-beige-50 pt-28 pb-20 lg:pt-32">
-      <Container>
-        <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-sm font-semibold text-accent-600">Admin Catalog</p>
-            <h1 className="mt-3 font-display text-4xl font-semibold text-primary-950">
-              Catalog management
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-primary-500">
-              Connected to Swagger endpoints: create catalog, list catalogs, and get catalog detail by id.
-            </p>
-          </div>
-          <div className="rounded-2xl border border-primary-100 bg-white px-4 py-3 text-sm text-primary-500 shadow-soft">
-            <span className="font-semibold text-primary-950">
-              {hasActiveFilters ? visibleCatalogs.length : catalogs.length}
-            </span>{" "}
-            {hasActiveFilters ? `of ${catalogs.length} catalogs shown` : "catalogs loaded"}
-          </div>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+        <div>
+          <span className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 shadow-sm ring-1 ring-slate-200">
+            <Boxes size={14} />
+            Admin Catalog
+          </span>
+          <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
+            Catalog Management
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-500">
+            Create and manage product catalogs from backend APIs.
+          </p>
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[390px_minmax(0,1fr)]">
-          <form className="rounded-3xl border border-primary-100 bg-white p-6 shadow-soft" onSubmit={handleSubmit}>
-            <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-900 text-white">
-                <Plus size={18} />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <SummaryCard label="Catalogs loaded" value={catalogsQuery.isLoading ? "Loading" : String(catalogs.length)} />
+          <SummaryCard label="Active catalogs" value={catalogsQuery.isError ? "-" : String(activeCatalogs)} />
+        </div>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
+        <form
+          className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm xl:sticky xl:top-28 xl:self-start"
+          onSubmit={handleSubmit}
+        >
+          <div className="flex items-start gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-950 text-white">
+              <Plus size={18} />
+            </span>
+            <div>
+              <h3 className="text-lg font-semibold text-slate-950">Create catalog</h3>
+              <span className="mt-2 inline-flex rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500">
+                POST /admin/catalogs/create
               </span>
+            </div>
+          </div>
+
+          <div className="mt-6 space-y-4">
+            <Input
+              label="Name"
+              required
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Oversized tees"
+              className="border-slate-200 focus:border-primary-500 focus:ring-primary-100"
+            />
+            <Textarea
+              label="Description"
+              required
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="Catalog description"
+              className="border-slate-200 focus:border-primary-500 focus:ring-primary-100"
+            />
+            <Input
+              label="Base price"
+              type="number"
+              min={0}
+              required
+              value={basePrice}
+              onChange={(event) => setBasePrice(event.target.value)}
+              className="border-slate-200 focus:border-primary-500 focus:ring-primary-100"
+            />
+          </div>
+
+          {createCatalog.isError && (
+            <p className="mt-5 rounded-2xl bg-error-50 px-4 py-3 text-sm text-error-700">
+              {getApiErrorMessage(createCatalog.error)}
+            </p>
+          )}
+
+          <Button type="submit" size="lg" className="mt-6 w-full" loading={createCatalog.isPending}>
+            <Plus size={17} />
+            Create catalog
+          </Button>
+        </form>
+
+        <div className="min-w-0 space-y-6">
+          <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <div className="flex flex-col gap-4 border-b border-slate-200 px-5 py-5 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-primary-950">Create catalog</h2>
-                <p className="text-sm text-primary-500">POST /admin/catalogs/create</p>
+                <h3 className="text-lg font-semibold text-slate-950">Catalog list</h3>
+                <p className="mt-1 text-sm text-slate-500">GET /admin/catalogs</p>
               </div>
+              <button
+                type="button"
+                onClick={() => void catalogsQuery.refetch()}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={catalogsQuery.isFetching}
+              >
+                <RefreshCw size={16} className={catalogsQuery.isFetching ? "animate-spin" : ""} />
+                Refresh
+              </button>
             </div>
 
-            <div className="mt-6 space-y-5">
-              <Input
-                label="Name"
-                required
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder="Oversized tees"
-              />
-              <Textarea
-                label="Description"
-                required
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
-                placeholder="Catalog description"
-              />
-              <Input
-                label="Base price"
-                type="number"
-                min={0}
-                required
-                value={basePrice}
-                onChange={(event) => setBasePrice(event.target.value)}
-              />
+            <div className="grid gap-3 border-b border-slate-200 px-5 py-4 lg:grid-cols-[minmax(0,1fr)_190px_auto] lg:items-center">
+              <div className="relative">
+                <Search
+                  size={16}
+                  className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+                <input
+                  type="text"
+                  value={keyword}
+                  onChange={(event) => setKeyword(event.target.value)}
+                  placeholder="Search catalog name"
+                  aria-label="Search catalogs by name"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-100"
+                />
+              </div>
+              <Select
+                aria-label="Filter by status"
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+                className="border-slate-200 bg-slate-50 focus:border-primary-500 focus:ring-primary-100"
+              >
+                <option value="ALL">All statuses</option>
+                {statusOptions.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </Select>
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-950"
+                >
+                  <X size={14} />
+                  Clear
+                </button>
+              )}
             </div>
 
-            {createCatalog.isError && (
-              <p className="mt-5 rounded-2xl bg-error-50 px-4 py-3 text-sm text-error-700">
-                {getApiErrorMessage(createCatalog.error)}
-              </p>
+            {catalogsQuery.isLoading && <CatalogTableSkeleton />}
+            {catalogsQuery.isError && (
+              <div className="p-5">
+                <ErrorState
+                  title="Cannot load catalogs"
+                  description={getApiErrorMessage(catalogsQuery.error)}
+                  onRetry={() => void catalogsQuery.refetch()}
+                />
+              </div>
+            )}
+            {!catalogsQuery.isLoading && !catalogsQuery.isError && catalogs.length === 0 && (
+              <div className="p-5">
+                <EmptyState title="No catalogs yet" description="Create the first catalog using the form on the left." />
+              </div>
+            )}
+            {!catalogsQuery.isLoading && !catalogsQuery.isError && catalogs.length > 0 && visibleCatalogs.length === 0 && (
+              <div className="p-5">
+                <EmptyState title="No catalogs match your filters" description="Try another keyword or status." />
+              </div>
             )}
 
-            <Button type="submit" size="lg" className="mt-6 w-full" loading={createCatalog.isPending}>
-              <Plus size={17} />
-              Create catalog
-            </Button>
-          </form>
-
-          <div className="space-y-6">
-            <section className="rounded-3xl border border-primary-100 bg-white shadow-soft">
-              <div className="flex items-center justify-between border-b border-primary-100 px-6 py-5">
-                <div>
-                  <h2 className="text-lg font-semibold text-primary-950">Catalog list</h2>
-                  <p className="mt-1 text-sm text-primary-500">GET /admin/catalogs</p>
-                </div>
-                <Boxes className="text-accent-500" size={22} />
-              </div>
-
-              <div className="flex flex-col gap-3 border-b border-primary-100 px-6 py-4 sm:flex-row sm:items-center">
-                <div className="relative flex-1">
-                  <Search
-                    size={16}
-                    className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-primary-300"
-                  />
-                  <input
-                    type="text"
-                    value={keyword}
-                    onChange={(event) => setKeyword(event.target.value)}
-                    placeholder="Search by name..."
-                    aria-label="Search catalogs by name"
-                    className="h-11 w-full rounded-xl border border-primary-200 bg-white pl-10 pr-3.5 text-sm text-primary-900 outline-none transition placeholder:text-primary-300 focus:border-accent-400 focus:ring-2 focus:ring-accent-100"
-                  />
-                </div>
-                <Select
-                  aria-label="Filter by status"
-                  value={statusFilter}
-                  onChange={(event) => setStatusFilter(event.target.value)}
-                  className="sm:w-48"
-                >
-                  <option value="ALL">All statuses</option>
-                  {statusOptions.map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </Select>
-                {hasActiveFilters && (
-                  <button
-                    type="button"
-                    onClick={clearFilters}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-primary-200 px-4 py-2 text-xs font-semibold text-primary-600 transition hover:border-primary-900 hover:text-primary-900"
-                  >
-                    <X size={13} />
-                    Clear filters
-                  </button>
-                )}
-              </div>
-
-              {catalogsQuery.isLoading && <Loading label="Loading catalogs..." />}
-              {catalogsQuery.isError && (
-                <div className="p-6">
-                  <ErrorState description="Could not load catalogs from backend." />
-                </div>
-              )}
-              {!catalogsQuery.isLoading && !catalogsQuery.isError && catalogs.length === 0 && (
-                <div className="p-6">
-                  <EmptyState title="No catalogs yet" description="Create the first catalog using the form on the left." />
-                </div>
-              )}
-              {!catalogsQuery.isLoading && !catalogsQuery.isError && catalogs.length > 0 && visibleCatalogs.length === 0 && (
-                <div className="p-6">
-                  <EmptyState title="No catalogs match your filters" description="Try a different keyword or status, or clear filters." />
-                </div>
-              )}
-
-              {visibleCatalogs.length > 0 && (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[760px] text-left text-sm">
-                    <thead className="bg-beige-50 text-xs uppercase tracking-wider text-primary-400">
-                      <tr>
-                        <th className="px-5 py-4">
+            {visibleCatalogs.length > 0 && (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[760px] text-left text-sm">
+                  <thead className="bg-slate-50 text-xs uppercase tracking-[0.14em] text-slate-400">
+                    <tr>
+                      <th className="px-5 py-4">
+                        <button
+                          type="button"
+                          onClick={() => toggleSort("name")}
+                          className="inline-flex items-center gap-1.5 transition hover:text-slate-900"
+                        >
+                          Name {renderSortIcon("name")}
+                        </button>
+                      </th>
+                      <th className="px-5 py-4">
+                        <button
+                          type="button"
+                          onClick={() => toggleSort("basePrice")}
+                          className="inline-flex items-center gap-1.5 transition hover:text-slate-900"
+                        >
+                          Base price {renderSortIcon("basePrice")}
+                        </button>
+                      </th>
+                      <th className="px-5 py-4">Status</th>
+                      <th className="px-5 py-4">
+                        <button
+                          type="button"
+                          onClick={() => toggleSort("updatedAt")}
+                          className="inline-flex items-center gap-1.5 transition hover:text-slate-900"
+                        >
+                          Updated {renderSortIcon("updatedAt")}
+                        </button>
+                      </th>
+                      <th className="px-5 py-4 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {visibleCatalogs.map((catalog) => (
+                      <tr
+                        key={catalog.id}
+                        className={[
+                          "transition hover:bg-slate-50",
+                          selectedId === catalog.id ? "bg-accent-50/70" : "",
+                        ].join(" ")}
+                      >
+                        <td className="px-5 py-4">
+                          <p className="font-semibold text-slate-950">{catalog.name}</p>
+                          <p className="mt-1 max-w-sm truncate text-xs text-slate-500">{catalog.description}</p>
+                        </td>
+                        <td className="px-5 py-4 font-semibold text-slate-900">
+                          {formatCurrency(catalog.basePrice)}
+                        </td>
+                        <td className="px-5 py-4">
+                          <Badge tone={getCatalogStatusTone(catalog.status)}>{catalog.status}</Badge>
+                        </td>
+                        <td className="px-5 py-4 text-slate-500">{formatDate(catalog.updatedAt)}</td>
+                        <td className="px-5 py-4 text-right">
                           <button
                             type="button"
-                            onClick={() => toggleSort("name")}
-                            className="inline-flex items-center gap-1.5 transition hover:text-primary-900"
+                            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:border-primary-900 hover:text-primary-900"
+                            onClick={() => setSelectedId(catalog.id)}
                           >
-                            Name {renderSortIcon("name")}
+                            <Eye size={14} />
+                            View
                           </button>
-                        </th>
-                        <th className="px-5 py-4">
-                          <button
-                            type="button"
-                            onClick={() => toggleSort("basePrice")}
-                            className="inline-flex items-center gap-1.5 transition hover:text-primary-900"
-                          >
-                            Base price {renderSortIcon("basePrice")}
-                          </button>
-                        </th>
-                        <th className="px-5 py-4">Status</th>
-                        <th className="px-5 py-4">
-                          <button
-                            type="button"
-                            onClick={() => toggleSort("updatedAt")}
-                            className="inline-flex items-center gap-1.5 transition hover:text-primary-900"
-                          >
-                            Updated {renderSortIcon("updatedAt")}
-                          </button>
-                        </th>
-                        <th className="px-5 py-4">Action</th>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-primary-100">
-                      {visibleCatalogs.map((catalog) => (
-                        <tr key={catalog.id} className={selectedId === catalog.id ? "bg-accent-50/60" : ""}>
-                          <td className="px-5 py-4">
-                            <p className="font-semibold text-primary-950">{catalog.name}</p>
-                            <p className="mt-1 max-w-sm truncate text-xs text-primary-500">{catalog.description}</p>
-                          </td>
-                          <td className="px-5 py-4 font-semibold text-primary-900">
-                            {formatCurrency(catalog.basePrice)}
-                          </td>
-                          <td className="px-5 py-4">
-                            <Badge tone={getCatalogStatusTone(catalog.status)}>{catalog.status}</Badge>
-                          </td>
-                          <td className="px-5 py-4 text-primary-500">{formatDate(catalog.updatedAt)}</td>
-                          <td className="px-5 py-4">
-                            <button
-                              type="button"
-                              className="inline-flex items-center gap-2 rounded-full border border-primary-200 px-4 py-2 text-xs font-semibold text-primary-800 transition hover:border-primary-900"
-                              onClick={() => setSelectedId(catalog.id)}
-                            >
-                              <Eye size={14} />
-                              Detail
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </section>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
 
-            <CatalogDetailPanel catalog={selectedCatalog} loading={detailQuery.isLoading} />
+          <CatalogDetailPanel
+            catalog={selectedCatalog}
+            loading={detailQuery.isLoading}
+            errorMessage={detailErrorMessage}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SummaryCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{label}</p>
+      <p className="mt-2 text-2xl font-semibold text-slate-950">{value}</p>
+    </div>
+  );
+}
+
+function CatalogTableSkeleton() {
+  return (
+    <div className="space-y-3 p-5" aria-label="Loading catalogs">
+      {Array.from({ length: 5 }).map((_, index) => (
+        <div key={index} className="grid gap-4 rounded-2xl bg-slate-50 p-4 md:grid-cols-[1.4fr_1fr_0.7fr_1fr]">
+          <span className="h-4 animate-pulse rounded-full bg-slate-200" />
+          <span className="h-4 animate-pulse rounded-full bg-slate-200" />
+          <span className="h-4 animate-pulse rounded-full bg-slate-200" />
+          <span className="h-4 animate-pulse rounded-full bg-slate-200" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CatalogDetailPanel({
+  catalog,
+  loading,
+  errorMessage,
+}: {
+  catalog: AdminCatalog | null;
+  loading: boolean;
+  errorMessage: string;
+}) {
+  return (
+    <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-slate-950">Catalog detail</h3>
+          <p className="mt-1 text-sm text-slate-500">GET /admin/catalogs/{"{id}"}</p>
+        </div>
+        {catalog && <Badge tone={getCatalogStatusTone(catalog.status)}>{catalog.status}</Badge>}
+      </div>
+
+      {loading && (
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <span key={index} className="h-20 animate-pulse rounded-2xl bg-slate-100" />
+          ))}
+        </div>
+      )}
+
+      {!loading && errorMessage && (
+        <p className="mt-5 rounded-2xl bg-error-50 px-4 py-3 text-sm text-error-700">
+          {errorMessage}
+        </p>
+      )}
+
+      {!loading && !catalog && !errorMessage && (
+        <div className="mt-5 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm text-slate-500">
+          Select a catalog from the table to inspect the detail endpoint response.
+        </div>
+      )}
+
+      {!loading && catalog && (
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          <DetailCell label="ID" value={catalog.id} muted />
+          <DetailCell label="Name" value={catalog.name} />
+          <DetailCell label="Base price" value={formatCurrency(catalog.basePrice)} />
+          <DetailCell label="Created" value={formatDate(catalog.createdAt)} />
+          <DetailCell label="Updated" value={formatDate(catalog.updatedAt)} />
+          <div className="rounded-2xl bg-slate-50 p-4 md:col-span-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+              Description
+            </p>
+            <p className="mt-2 text-sm leading-6 text-slate-700">{catalog.description}</p>
           </div>
         </div>
-      </Container>
+      )}
     </section>
   );
 }
 
-function CatalogDetailPanel({ catalog, loading }: { catalog: AdminCatalog | null; loading: boolean }) {
+function DetailCell({ label, value, muted = false }: { label: string; value: string; muted?: boolean }) {
   return (
-    <section className="rounded-3xl border border-primary-100 bg-white p-6 shadow-soft">
-      <div className="mb-5">
-        <h2 className="text-lg font-semibold text-primary-950">Catalog detail</h2>
-        <p className="mt-1 text-sm text-primary-500">GET /admin/catalogs/{"{id}"}</p>
-      </div>
-
-      {loading && <Loading label="Loading catalog detail..." />}
-      {!loading && !catalog && (
-        <div className="rounded-2xl bg-beige-50 p-5 text-sm text-primary-500">
-          Select a catalog from the table to inspect the detail endpoint response.
-        </div>
-      )}
-      {!loading && catalog && (
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-2xl bg-beige-50 p-4">
-            <p className="text-xs text-primary-400">ID</p>
-            <p className="mt-1 break-all text-sm font-semibold text-primary-950">{catalog.id}</p>
-          </div>
-          <div className="rounded-2xl bg-beige-50 p-4">
-            <p className="text-xs text-primary-400">Status</p>
-            <div className="mt-2">
-              <Badge tone={getCatalogStatusTone(catalog.status)}>{catalog.status}</Badge>
-            </div>
-          </div>
-          <div className="rounded-2xl bg-beige-50 p-4">
-            <p className="text-xs text-primary-400">Name</p>
-            <p className="mt-1 text-sm font-semibold text-primary-950">{catalog.name}</p>
-          </div>
-          <div className="rounded-2xl bg-beige-50 p-4">
-            <p className="text-xs text-primary-400">Base price</p>
-            <p className="mt-1 text-sm font-semibold text-primary-950">{formatCurrency(catalog.basePrice)}</p>
-          </div>
-          <div className="rounded-2xl bg-beige-50 p-4 md:col-span-2">
-            <p className="text-xs text-primary-400">Description</p>
-            <p className="mt-1 text-sm leading-6 text-primary-700">{catalog.description}</p>
-          </div>
-          <div className="rounded-2xl bg-beige-50 p-4">
-            <p className="text-xs text-primary-400">Created</p>
-            <p className="mt-1 text-sm font-semibold text-primary-950">{formatDate(catalog.createdAt)}</p>
-          </div>
-          <div className="rounded-2xl bg-beige-50 p-4">
-            <p className="text-xs text-primary-400">Updated</p>
-            <p className="mt-1 text-sm font-semibold text-primary-950">{formatDate(catalog.updatedAt)}</p>
-          </div>
-        </div>
-      )}
-    </section>
+    <div className="rounded-2xl bg-slate-50 p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{label}</p>
+      <p className={["mt-2 break-all text-sm font-semibold", muted ? "text-slate-600" : "text-slate-950"].join(" ")}>
+        {value}
+      </p>
+    </div>
   );
 }
